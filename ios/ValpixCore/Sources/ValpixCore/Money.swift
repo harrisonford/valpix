@@ -45,6 +45,15 @@ public enum Money {
         return member.settled + UInt64(earned)
     }
 
+    /// Whether a payment of `amountPesos` can be sent: it must be at least
+    /// one peso and, with its fee, fit inside the balance.
+    public static func canPay(amountPesos: UInt64, balance: UInt64, fee: UInt64?) -> Bool {
+        guard amountPesos > 0 else { return false }
+        let (amount, o1) = amountPesos.multipliedReportingOverflow(by: unit)
+        let (total, o2) = amount.addingReportingOverflow(fee ?? 0)
+        return !o1 && !o2 && total <= balance
+    }
+
     /// What can be spent: payments are made in whole pesos.
     public static func wholePesos(micro: UInt64) -> UInt64 { micro / unit }
     public static func micro(pesos: UInt64) -> UInt64 { pesos * unit }

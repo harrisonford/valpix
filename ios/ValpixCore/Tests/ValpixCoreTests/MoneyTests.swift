@@ -62,6 +62,20 @@ private func member(settled: UInt64, at ts: Int64) -> MemberRecord {
         #expect(Money.liveBalance(member: m, dailyRate: rate, chainNow: later) == 1000 * Money.unit)
     }
 
+    @Test func refusesAmountsTheBalanceCannotCover() {
+        let balance = 1_000 * Money.unit + 500_000 // 1000,5 pesos
+        let fee: UInt64 = 1_000_006
+        #expect(Money.canPay(amountPesos: 300, balance: balance, fee: fee))
+        #expect(Money.canPay(amountPesos: 999, balance: balance, fee: fee))
+        // 1000 pesos would leave nothing for the fee.
+        #expect(!Money.canPay(amountPesos: 1_000, balance: balance, fee: fee))
+        // With no fee charged, the whole pesos can go.
+        #expect(Money.canPay(amountPesos: 1_000, balance: balance, fee: nil))
+        #expect(!Money.canPay(amountPesos: 1_001, balance: balance, fee: nil))
+        #expect(!Money.canPay(amountPesos: 0, balance: balance, fee: nil))
+        #expect(!Money.canPay(amountPesos: .max, balance: .max, fee: 1))
+    }
+
     @Test func spendableIsWholePesosOnly() {
         #expect(Money.wholePesos(micro: 12_345_999_999) == 12_345)
         #expect(Money.wholePesos(micro: 999_999) == 0)
