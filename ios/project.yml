@@ -1,0 +1,46 @@
+name: Valpix
+options:
+  bundleIdPrefix: cl.valpix
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+packages:
+  ValpixCore:
+    path: ValpixCore
+targets:
+  Valpix:
+    type: application
+    platform: iOS
+    sources: [Valpix]
+    dependencies:
+      - package: ValpixCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cl.valpix.app
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "6.0"
+        SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_STYLE: Automatic
+    info:
+      path: Valpix/Info.plist
+      properties:
+        CFBundleDisplayName: valpix
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        UILaunchScreen:
+          UIColorName: ""
+        UIUserInterfaceStyle: Dark
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        NSCameraUsageDescription: valpix usa la cámara para leer códigos QR.
+        NSFaceIDUsageDescription: valpix usa Face ID para aprobar tus pagos.
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        CFBundleURLTypes:
+          - CFBundleURLName: cl.valpix.app
+            CFBundleURLSchemes: [valpix]
+        # Where the app reaches Solana, and which program it talks to.
+        ValpixRPCURL: http://127.0.0.1:8899
+        ValpixProgramID: 5AVhdmuAbx8HWJdR6h7QAPojfJHt7Z6TAa9pwj12wqcx

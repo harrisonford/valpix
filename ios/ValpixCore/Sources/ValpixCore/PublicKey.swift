@@ -42,3 +42,18 @@ public struct PublicKey: Hashable, Sendable, CustomStringConvertible {
     public static let systemProgram = PublicKey(data: Data(repeating: 0, count: 32))!
     public static let instructionsSysvar = PublicKey(base58: "Sysvar1nstructions1111111111111111111111111")!
 }
+
+extension PublicKey: Codable {
+    public init(from decoder: Decoder) throws {
+        let text = try decoder.singleValueContainer().decode(String.self)
+        guard let key = PublicKey(base58: text) else {
+            throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "not a Solana address"))
+        }
+        self = key
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(base58)
+    }
+}

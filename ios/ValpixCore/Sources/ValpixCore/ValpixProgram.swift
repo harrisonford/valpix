@@ -92,7 +92,7 @@ private func decode<T>(_ accountData: Data, as name: String, _ body: (inout Bors
     return try? body(&reader)
 }
 
-public struct ConfigRecord: Equatable, Sendable {
+public struct ConfigRecord: Equatable, Sendable, Codable {
     public let admin: PublicKey
     public let dailyRate: UInt64
     public let feeRefundLamports: UInt64
@@ -113,7 +113,7 @@ public struct ConfigRecord: Equatable, Sendable {
     }
 }
 
-public struct PoolRecord: Equatable, Sendable {
+public struct PoolRecord: Equatable, Sendable, Codable {
     public let clpcReserve: UInt64
 
     public init?(accountData: Data) {
@@ -124,7 +124,7 @@ public struct PoolRecord: Equatable, Sendable {
     public init(clpcReserve: UInt64) { self.clpcReserve = clpcReserve }
 }
 
-public struct MemberRecord: Equatable, Sendable {
+public struct MemberRecord: Equatable, Sendable, Codable {
     public let wallet: PublicKey
     /// Micro-CLPC as of `lastSettledTs`; income since then is added on top.
     public let settled: UInt64

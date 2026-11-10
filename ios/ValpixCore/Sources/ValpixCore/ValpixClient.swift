@@ -6,7 +6,7 @@ public enum ClientError: Error, Equatable {
 }
 
 /// Everything the app needs to draw the home screen, from one round trip.
-public struct WalletState: Equatable, Sendable {
+public struct WalletState: Equatable, Sendable, Codable {
     /// `nil` until an existing member has brought this wallet in.
     public let member: MemberRecord?
     public let config: ConfigRecord
@@ -30,6 +30,17 @@ public struct WalletState: Equatable, Sendable {
             refundLamports: config.feeRefundLamports, floorLamports: config.poolFloorLamports,
             maxFee: config.maxFee
         )
+    }
+}
+
+extension WalletState {
+    /// The state as bytes, so the phone can show the last known balance,
+    /// still ticking, when it opens without a route to the chain.
+    public var snapshot: Data { (try? JSONEncoder().encode(self)) ?? Data() }
+
+    public init?(snapshot: Data) {
+        guard let state = try? JSONDecoder().decode(WalletState.self, from: snapshot) else { return nil }
+        self = state
     }
 }
 

@@ -161,3 +161,30 @@ private func client(_ transport: RPCTransport) -> ValpixClient {
         #expect(fake.calls.filter { $0.method == "getTransaction" }.count == 2)
     }
 }
+
+@Suite struct WalletStateSnapshotTests {
+    private func sample(at observed: Date) async throws -> WalletState {
+        try await client(chain()).state(for: keypair.publicKey, observedAt: observed)
+    }
+
+    @Test func survivesBeingSavedAndRestored() async throws {
+        let observed = Date(timeIntervalSince1970: 2_000_000_000)
+        let state = try await sample(at: observed)
+        let restored = try #require(WalletState(snapshot: state.snapshot))
+        #expect(restored == state)
+    }
+
+    @Test func aRestoredStateKeepsTickingWithoutTheChain() async throws {
+        let observed = Date(timeIntervalSince1970: 2_000_000_000)
+        let state = try await sample(at: observed)
+        let restored = try #require(WalletState(snapshot: state.snapshot))
+        let later = observed.addingTimeInterval(86_400)
+        #expect(restored.balance(at: later) == state.balance(at: observed) + 1000 * Money.unit)
+    }
+
+    @Test func rejectsGarbage() {
+        #expect(WalletState(snapshot: Data()) == nil)
+        #expect(WalletState(snapshot: Data("{}".utf8)) == nil)
+        #expect(WalletState(snapshot: Data("not json".utf8)) == nil)
+    }
+}

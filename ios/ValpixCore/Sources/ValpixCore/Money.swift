@@ -61,8 +61,9 @@ public enum Money {
 
 /// Chain time from the phone's clock. The phone's clock may be wrong, so the
 /// app measures the difference once and applies it from then on.
-public struct ChainClock: Sendable, Equatable {
-    private let offset: TimeInterval
+public struct ChainClock: Sendable, Equatable, Codable {
+    /// Seconds to add to the phone's clock to get chain time.
+    public let offset: TimeInterval
 
     public init(chainTime: TimeInterval, observedAt: Date = Date()) {
         offset = chainTime - observedAt.timeIntervalSince1970
