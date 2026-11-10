@@ -14,6 +14,10 @@ targets:
     sources: [Valpix]
     dependencies:
       - package: ValpixCore
+    # Holds DEVELOPMENT_TEAM. Not in git: copy Local.xcconfig.example.
+    configFiles:
+      Debug: Local.xcconfig
+      Release: Local.xcconfig
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: cl.valpix.app
@@ -44,6 +48,6 @@ targets:
         # Where the app reaches Solana, and which program it talks to.
         # Tried in order. The person can add their own in the wallet screen.
         ValpixRPCURLs:
-          - http://127.0.0.1:8899
+          - http://127.0.0.1:8899       # a validator on this Mac, for the simulator
           - https://api.devnet.solana.com
         ValpixProgramID: 5AVhdmuAbx8HWJdR6h7QAPojfJHt7Z6TAa9pwj12wqcx

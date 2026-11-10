@@ -37,16 +37,35 @@ Needs Xcode 26 and [XcodeGen](https://github.com/yonaskolb/XcodeGen).
 
 ```sh
 cd ios
+cp Local.xcconfig.example Local.xcconfig   # then put your Apple team ID in it
 xcodegen generate
-open Valpix.xcodeproj        # then run on a simulator
+open Valpix.xcodeproj                      # then run on a simulator or a phone
 ```
+
+## Signing: keep one team
+
+**Changing the signing team makes the wallet disappear.** The Keychain files
+a wallet under the team that signed the app. Sign the same app with another
+team (or with none) and it can no longer see the old key, so it starts a new,
+empty wallet. This happened here on the simulator the first time the app was
+signed for a real phone. The old key is not deleted, but only a build signed
+by the old team can reach it.
+
+So: pick the team once, keep it in `Local.xcconfig`, and before ever changing
+it, use the wallet screen to move or back up the wallet first.
+
+A free personal team works, with two limits: the phone must trust the
+developer once (Settings, General, VPN & Device Management), and the app
+stops opening after seven days until it is installed again. Reinstalling with
+the same team keeps the wallet.
 
 Build signed (the default). A build made with `CODE_SIGNING_ALLOWED=NO`
 cannot use the Keychain, and the app then shows a struck-through lock
 instead of running on a wallet it could not save.
 
-The app talks to the access points in `ValpixRPCURLs` (see `project.yml`),
-a local validator first and devnet second. Start one as described in
+The app talks to the access points in `ValpixRPCURLs` (see `project.yml`):
+a validator on this Mac first, then devnet. A phone cannot reach the Mac's
+validator, so it uses devnet, where the program is deployed. Start one as described in
 `../program/README.md`. To point a simulator somewhere else for one launch:
 
 ```sh
@@ -96,8 +115,9 @@ container. None of this exists in release builds.
 - Face ID was bypassed in the scripted simulator runs. Without the bypass the
   simulator shows the system passcode sheet on opening, as intended.
 - Borrowing a nearby phone's internet over Bluetooth is part 4.
-- No app icon yet.
-- The release build still lists the local validator first, and the program is
-  not on devnet yet, so a phone build has nothing to talk to until it is.
+- The app icon is a placeholder: Apple's banknote emoji on black. Apple does
+  not allow its emoji in a published app's icon, so it needs replacing before
+  any App Store or TestFlight submission.
+- Installed on an iPhone 12 Pro but not yet opened there.
 - No automated UI tests; the screens were checked by running them and
   reading screenshots (`../docs/screenshots/`).

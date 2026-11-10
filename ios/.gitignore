@@ -2,3 +2,4 @@ Valpix.xcodeproj/
 ValpixCore/.build/
 ValpixCore/.swiftpm/
 DerivedData/
+Local.xcconfig

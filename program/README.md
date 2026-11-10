@@ -5,8 +5,8 @@ The Solana program that holds every valpix balance and rule. Design:
 
 Program address: `5AVhdmuAbx8HWJdR6h7QAPojfJHt7Z6TAa9pwj12wqcx`
 
-**Devnet: not deployed yet.** It needs devnet SOL in the admin wallet; see
-"Devnet" below.
+**Devnet: deployed on 10 November 2026**, with a pool of 5 SOL against
+1,000,000 CLPC (a fee of about 1 CLPC).
 
 ## What it does
 
