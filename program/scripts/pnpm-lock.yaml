@@ -15,9 +15,15 @@ importers:
         specifier: ^1.98.0
         version: 1.99.0(bufferutil@4.2.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
     devDependencies:
+      '@types/bs58':
+        specifier: 4.0.4
+        version: 4.0.4
       '@types/node':
         specifier: ^22.0.0
         version: 22.20.5
+      bs58:
+        specifier: 4.0.1
+        version: 4.0.1
       tsx:
         specifier: ^4.19.0
         version: 4.23.15
@@ -246,6 +252,9 @@ packages:
 
   '@swc/helpers@0.5.24':
     resolution: {integrity: sha512-6tcXo4kA8HgGO7AVmawB57RYi/piBPYVHVcO6dXjX+SZw8GoHmi262sp4v2Ha2kNP9Cx84qei27yT+fjS1lxgg==}
+
+  '@types/bs58@4.0.4':
+    resolution: {integrity: sha512-0IEpMFXXQi2zXaXl9GJ3sRwQo0uEkD+yFOv+FnAU5lkPtcu6h61xb7jc2CFPEZ5BUOaiP13ThuGc9HD4R8lR5g==}
 
   '@types/connect@3.4.38':
     resolution: {integrity: sha512-K6uROf1LD88uDQqJCktA4yzL1YYAK6NgfsI0v/mTgyPKWsX1CnJ0XPSDhViejru1GcRkLWb8RlzFYJRqGUbaug==}
@@ -624,6 +633,11 @@ snapshots:
       - utf-8-validate
 
   '@swc/helpers@0.5.24': {}
+
+  '@types/bs58@4.0.4':
+    dependencies:
+      '@types/node': 22.20.5
+      base-x: 3.0.11
 
   '@types/connect@3.4.38':
     dependencies:
