@@ -230,6 +230,22 @@ impl Env {
             },
         )
     }
+    pub fn ix_join(&self, inviter: &Pubkey, newcomer: &Pubkey) -> Instruction {
+        self.ix(
+            valpix::instruction::Join {}.data(),
+            valpix::accounts::Join {
+                inviter: *inviter,
+                inviter_member: self.member_pda(inviter),
+                newcomer: *newcomer,
+                newcomer_member: self.member_pda(newcomer),
+                config: self.config_pda(),
+                pool: self.pool_pda(),
+                vault: self.vault_pda(),
+                system_program: system_program::ID,
+                instructions: instructions_sysvar(),
+            },
+        )
+    }
     /// The current config as update parameters, ready to tweak one field.
     pub fn config_params(&self) -> ConfigParams {
         let c = self.config();

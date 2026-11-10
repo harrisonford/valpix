@@ -32,6 +32,11 @@ pub mod valpix {
         crate::instructions::admin_create_member::handle_admin_create_member(ctx)
     }
 
+    /// Creates an account for a newcomer, paid for by an existing member.
+    pub fn join(ctx: Context<Join>) -> Result<()> {
+        crate::instructions::join::handle_join(ctx)
+    }
+
     /// Moves `amount` micro-CLPC to another member. The pool returns the
     /// Solana base fee to the payer and charges its price in CLPC.
     pub fn pay(ctx: Context<Pay>, amount: u64, payer_name: String) -> Result<()> {

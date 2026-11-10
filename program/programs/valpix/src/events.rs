@@ -12,3 +12,12 @@ pub struct Paid {
     pub name: String,
     pub ts: i64,
 }
+
+#[event]
+pub struct Joined {
+    pub inviter: Pubkey,
+    pub newcomer: Pubkey,
+    /// Micro-CLPC the inviter gave the pool.
+    pub cost: u64,
+    pub ts: i64,
+}
