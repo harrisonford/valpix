@@ -12,7 +12,7 @@ import ValpixCore
 struct KeychainStore: SecretStore {
     private let query: [String: Any] = [
         kSecClass as String: kSecClassGenericPassword,
-        kSecAttrService as String: "cl.valpix.wallet",
+        kSecAttrService as String: "com.franky.valpix.wallet",
         kSecAttrAccount as String: "seed",
     ]
 

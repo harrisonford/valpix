@@ -1,6 +1,6 @@
 name: Valpix
 options:
-  bundleIdPrefix: cl.valpix
+  bundleIdPrefix: com.franky
   deploymentTarget:
     iOS: "17.0"
   createIntermediateGroups: true
@@ -20,7 +20,7 @@ targets:
       Release: Local.xcconfig
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: cl.valpix.app
+        PRODUCT_BUNDLE_IDENTIFIER: com.franky.valpix
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
         SWIFT_VERSION: "6.0"
@@ -43,7 +43,7 @@ targets:
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
         CFBundleURLTypes:
-          - CFBundleURLName: cl.valpix.app
+          - CFBundleURLName: com.franky.valpix
             CFBundleURLSchemes: [valpix]
         # Where the app reaches Solana, and which program it talks to.
         # Tried in order. The person can add their own in the wallet screen.

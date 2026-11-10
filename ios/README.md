@@ -69,7 +69,7 @@ validator, so it uses devnet, where the program is deployed. Start one as descri
 `../program/README.md`. To point a simulator somewhere else for one launch:
 
 ```sh
-SIMCTL_CHILD_VALPIX_RPC=https://api.devnet.solana.com xcrun simctl launch booted cl.valpix.app
+SIMCTL_CHILD_VALPIX_RPC=https://api.devnet.solana.com xcrun simctl launch booted com.franky.valpix
 ```
 
 ## Tests
