@@ -76,7 +76,7 @@ SIMCTL_CHILD_VALPIX_RPC=https://api.devnet.solana.com xcrun simctl launch booted
 
 ```sh
 cd ios/ValpixCore
-swift test        # 94 tests
+swift test        # 98 tests
 ```
 
 One suite, `LocalValidatorTests`, runs the Swift client against the real

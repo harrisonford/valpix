@@ -22,7 +22,7 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT), SystemBarStyle.dark(Color.TRANSPARENT))
         super.onCreate(savedInstanceState)
-        AppConfig.readDebugExtras(intent)
+        AppConfig.readDebugLaunch(this)
         SelfTest.runIfAsked()
         setContent { Root(model) }
         if (savedInstanceState == null) openLink(intent)
@@ -30,7 +30,7 @@ class MainActivity : FragmentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        if (AppConfig.readDebugExtras(intent)) {
+        if (AppConfig.readDebugLaunch(this)) {
             model.debugRelaunched()
             SelfTest.runIfAsked()
         }
@@ -45,12 +45,20 @@ class MainActivity : FragmentActivity() {
 
     override fun onStop() {
         super.onStop()
-        if (!isChangingConfigurations) model.background()
+        if (!isChangingConfigurations) {
+            model.background()
+            // Debug settings are for one run on screen; they do not linger.
+            if (AppConfig.clearDebug()) model.debugRelaunched()
+        }
     }
 
     /** A valpix: link tapped in another app. */
     private fun openLink(intent: Intent?) {
         if (intent?.action != Intent.ACTION_VIEW) return
+        // Reopened from the recent-apps list: the system hands back the link
+        // that first started the app. It was dealt with then; do not offer
+        // the same payment again.
+        if (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0) return
         intent.dataString?.let { model.open(it, LinkSource.EXTERNAL, whenReady = true) }
     }
 }

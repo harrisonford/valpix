@@ -19,6 +19,20 @@ public enum ValpixLink: Equatable, Sendable {
     /// Longer than any real valpix link; anything bigger is not parsed at all.
     public static let maxLength = 1_024
 
+    /// A person's name as it may go into a code or a payment: without the
+    /// hidden characters `init?` refuses (many emoji carry one), trimmed, and
+    /// cut to `maxNameBytes` without splitting a character. Whatever someone
+    /// types as their name, their codes stay readable.
+    public static func shareableName(_ name: String) -> String {
+        var visible = String.UnicodeScalarView()
+        for scalar in name.unicodeScalars where !CharacterSet.controlCharacters.contains(scalar) {
+            visible.append(scalar)
+        }
+        var text = String(visible).trimmingCharacters(in: .whitespacesAndNewlines)
+        while text.utf8.count > maxNameBytes { text.removeLast() }
+        return text.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     public init?(_ text: String) {
         guard text.utf8.count <= Self.maxLength else { return nil }
         guard let parts = URLComponents(string: text.trimmingCharacters(in: .whitespacesAndNewlines)),

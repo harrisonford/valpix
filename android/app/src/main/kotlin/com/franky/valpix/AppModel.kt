@@ -143,12 +143,7 @@ class AppModel(private val app: Application) {
         ValpixClient(SolanaRpc(AppConfig.transport(accessPoint)), ValpixProgram(AppConfig.programId))
 
     /** The name sent with payments and shown in QR codes: at most 32 bytes. */
-    val sharedName: String
-        get() {
-            var text = name.trim()
-            while (text.toByteArray().size > ValpixLink.MAX_NAME_BYTES) text = text.dropLast(1)
-            return text
-        }
+    val sharedName: String get() = ValpixLink.shareableName(name)
 
     /** The person's own access point, tried before the built-in ones. */
     var accessPoint: String
@@ -435,7 +430,7 @@ class AppModel(private val app: Application) {
     private var debugLinkOpened = false
 
     /**
-     * `VALPIX_OPEN=<valpix: link>` in the launch extras is treated as a
+     * `VALPIX_OPEN=<valpix: link>` in the debug launch file is treated as a
      * scanned code once the app is ready, so a script can stand in for the
      * camera.
      */
@@ -451,7 +446,7 @@ class AppModel(private val app: Application) {
         }
     }
 
-    /** The app was launched again with new debug extras while it was running. */
+    /** The debug settings changed while the app was running. */
     fun debugRelaunched() {
         if (!BuildConfig.DEBUG) return
         debugLinkOpened = false

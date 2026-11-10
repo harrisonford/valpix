@@ -112,8 +112,9 @@ class ClientTest {
                 "Program log: AnchorError occurred. Error Code: InsufficientFunds. Error Number: 6006. Error Message: Not enough.",
             ))
         }
+        fake.on("getSignatureStatuses") { """{"value":[null]}""" }
         assertEquals(Outcome.Failed(FailureReason.Rejected("InsufficientFunds")), client.pay(payer, recipient, 1uL, ""))
-        assertEquals(0, fake.count("getSignatureStatuses"))
+        assertEquals(1, fake.count("getSignatureStatuses"))
         fake.on("sendTransaction") { throw FakeRpcFailure(-32003, "Blockhash not found") }
         assertEquals(Outcome.Failed(FailureReason.Rejected("Blockhash not found")), client.pay(payer, recipient, 1uL, ""))
     }
@@ -168,6 +169,35 @@ class ClientTest {
         fake.on("getBlockHeight") { throw IOException("down") }
         val quick = ValpixClient(SolanaRpc(fake), program, pollIntervalMs = 1, timeoutMs = 40)
         assertEquals(Outcome.Failed(FailureReason.Unconfirmed), quick.pay(payer, recipient, 1uL, ""))
+    }
+
+    private val confirmed = """{"value":[{"confirmationStatus":"confirmed","err":null}]}"""
+    private fun searchesHistory(params: kotlinx.serialization.json.JsonArray) =
+        (params.getOrNull(1) as? kotlinx.serialization.json.JsonObject)?.get("searchTransactionHistory")?.toString() == "true"
+
+    @Test fun theLastLookSearchesHistorySoAPhoneThatSleptFindsItsPayment() {
+        // The phone slept for minutes after sending. An access point answers
+        // a plain status question only from its short memory of recent
+        // transactions; the last look must ask it to search further back.
+        sendHandlers()
+        fake.on("getSignatureStatuses") { params -> if (searchesHistory(params)) confirmed else """{"value":[null]}""" }
+        fake.on("getBlockHeight") { "5000" }
+        assertIs<Outcome.Confirmed>(client.pay(payer, recipient, 1uL, ""))
+    }
+
+    @Test fun aRefusalOnSendIsCheckedAgainstTheChainBeforeSayingNotPaid() {
+        // The first access point passed the payment on but its answer was
+        // lost; the next one refuses the same transaction as already seen.
+        sendHandlers()
+        fake.on("sendTransaction") { throw FakeRpcFailure(-32002, "Transaction simulation failed: This transaction has already been processed") }
+        fake.on("getSignatureStatuses") { params -> if (searchesHistory(params)) confirmed else """{"value":[null]}""" }
+        assertIs<Outcome.Confirmed>(client.pay(payer, recipient, 1uL, ""))
+        // And when the chain cannot be asked, the refusal stands.
+        fake.on("getSignatureStatuses") { throw IOException("down") }
+        assertEquals(
+            Outcome.Failed(FailureReason.Rejected("Transaction simulation failed: This transaction has already been processed")),
+            client.pay(payer, recipient, 1uL, ""),
+        )
     }
 
     @Test fun joinAndReviveSendTheirInstructions() {

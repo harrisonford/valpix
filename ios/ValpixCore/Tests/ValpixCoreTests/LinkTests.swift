@@ -16,6 +16,22 @@ private let key = PublicKey(base58: Vectors.publicKey)!
         #expect(ValpixLink(link.string) == link)
     }
 
+    @Test func aNameIsMadeSafeBeforeItGoesIntoACode() {
+        #expect(ValpixLink.shareableName("  Ana \n") == "Ana")
+        #expect(ValpixLink.shareableName("a\u{0}b") == "ab")
+        // Many emoji are joined by an invisible character that scanners
+        // refuse in a name; left in, nobody could read this person's codes.
+        let safe = ValpixLink.shareableName("Ana \u{1F937}\u{200D}\u{2640}\u{FE0F}")
+        #expect(!safe.unicodeScalars.contains("\u{200D}"))
+        #expect(safe.hasPrefix("Ana "))
+        #expect(ValpixLink(ValpixLink.join(key: key, name: safe).string) == .join(key: key, name: safe))
+        #expect(ValpixLink(ValpixLink.pay(to: key, amountPesos: 5, name: safe).string) == .pay(to: key, amountPesos: 5, name: safe))
+        // At most 32 bytes, never cutting a character in half.
+        #expect(ValpixLink.shareableName(String(repeating: "ñ", count: 40)) == String(repeating: "ñ", count: 16))
+        #expect(ValpixLink.shareableName(String(repeating: "😀", count: 20)) == String(repeating: "😀", count: 8))
+        #expect(ValpixLink.shareableName("a" + String(repeating: "😀", count: 20)) == "a" + String(repeating: "😀", count: 7))
+    }
+
     @Test func roundTripsJoinWalletAndBackup() {
         let join = ValpixLink.join(key: key, name: "Tomás")
         #expect(ValpixLink(join.string) == join)

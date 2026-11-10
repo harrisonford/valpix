@@ -25,6 +25,4 @@ tasks.test {
         events("failed", "skipped")
         exceptionFormat = TestExceptionFormat.FULL
     }
-    // The integration test reads these; without them it is skipped.
-    inputs.property("rpc", System.getenv("VALPIX_TEST_RPC") ?: "")
 }

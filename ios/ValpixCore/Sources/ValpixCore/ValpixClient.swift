@@ -163,7 +163,11 @@ public struct ValpixClient: Sendable {
         do {
             _ = try await rpc.send(wire)
         } catch let RPCError.rpc(_, message, logs) {
-            // The access point refused it before passing it on.
+            // The access point refused it. Usually that means it never left;
+            // but when an earlier access point passed it on and its answer
+            // was lost, the next one refuses it as already seen. Look once
+            // before telling anyone they have not paid.
+            if let landed = try? await settledOutcome(signature, searchHistory: true) { return landed }
             return .failed(.rejected(Self.errorName(in: logs) ?? message))
         } catch {
             // No answer. It may have been passed on all the same: go and look.
@@ -175,8 +179,10 @@ public struct ValpixClient: Sendable {
                 if let settled = try await settledOutcome(signature) { return settled }
                 if try await rpc.blockHeight() > latest.lastValidBlockHeight {
                     // Too late to land now. One last look, in case it made
-                    // one of the final blocks.
-                    return try await settledOutcome(signature) ?? .failed(.expired)
+                    // one of the final blocks: and a thorough one, because a
+                    // phone that slept since sending is asking about a
+                    // transaction too old for the quick answer.
+                    return try await settledOutcome(signature, searchHistory: true) ?? .failed(.expired)
                 }
             } catch {
                 // Route trouble: keep trying until the deadline.
@@ -187,8 +193,8 @@ public struct ValpixClient: Sendable {
     }
 
     /// The outcome, if the chain has one for this signature yet.
-    private func settledOutcome(_ signature: String) async throws -> Outcome? {
-        guard let status = try await rpc.signatureStatus(signature) else { return nil }
+    private func settledOutcome(_ signature: String, searchHistory: Bool = false) async throws -> Outcome? {
+        guard let status = try await rpc.signatureStatus(signature, searchHistory: searchHistory) else { return nil }
         if let error = status.error { return .failed(.rejected(error)) }
         return status.isConfirmed ? .confirmed(signature: signature) : nil
     }

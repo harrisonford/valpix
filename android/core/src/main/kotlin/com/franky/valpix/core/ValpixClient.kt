@@ -158,8 +158,16 @@ class ValpixClient(
         try {
             rpc.send(wire)
         } catch (e: RpcException.Rpc) {
-            // The access point refused it before passing it on.
-            return Outcome.Failed(FailureReason.Rejected(errorName(e.logs) ?: e.text))
+            // The access point refused it. Usually that means it never left;
+            // but when an earlier access point passed it on and its answer
+            // was lost, the next one refuses it as already seen. Look once
+            // before telling anyone they have not paid.
+            val landed = try {
+                settledOutcome(signature, searchHistory = true)
+            } catch (lookup: RpcException) {
+                null
+            }
+            return landed ?: Outcome.Failed(FailureReason.Rejected(errorName(e.logs) ?: e.text))
         } catch (e: RpcException) {
             // No answer. It may have been passed on all the same: go and look.
         }
@@ -170,8 +178,10 @@ class ValpixClient(
                 settledOutcome(signature)?.let { return it }
                 if (rpc.blockHeight() > latest.lastValidBlockHeight) {
                     // Too late to land now. One last look, in case it made
-                    // one of the final blocks.
-                    return settledOutcome(signature) ?: Outcome.Failed(FailureReason.Expired)
+                    // one of the final blocks: and a thorough one, because a
+                    // phone that slept since sending is asking about a
+                    // transaction too old for the quick answer.
+                    return settledOutcome(signature, searchHistory = true) ?: Outcome.Failed(FailureReason.Expired)
                 }
             } catch (e: RpcException) {
                 // Route trouble: keep trying until the deadline.
@@ -182,8 +192,8 @@ class ValpixClient(
     }
 
     /** The outcome, if the chain has one for this signature yet. */
-    private fun settledOutcome(signature: String): Outcome? {
-        val status = rpc.signatureStatus(signature) ?: return null
+    private fun settledOutcome(signature: String, searchHistory: Boolean = false): Outcome? {
+        val status = rpc.signatureStatus(signature, searchHistory) ?: return null
         status.error?.let { return Outcome.Failed(FailureReason.Rejected(it)) }
         return if (status.isConfirmed) Outcome.Confirmed(signature) else null
     }

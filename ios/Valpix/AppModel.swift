@@ -68,11 +68,7 @@ final class AppModel {
     var publicKey: PublicKey { keypair.publicKey }
 
     /// The name sent with payments and shown in QR codes: at most 32 bytes.
-    var sharedName: String {
-        var text = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        while text.utf8.count > ValpixLink.maxNameBytes { text.removeLast() }
-        return text
-    }
+    var sharedName: String { ValpixLink.shareableName(name) }
 
     // MARK: Lock
 

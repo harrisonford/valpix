@@ -81,25 +81,40 @@ few seconds each.
 
 ## Driving the phone from a script
 
-Debug builds read a few launch extras, so a script on the Mac can stand in
-for the camera and the fingerprint:
+Debug builds can be given a few settings for one run, so a script on the Mac
+can stand in for the camera and the fingerprint:
 
 ```sh
-adb shell am start -n com.franky.valpix/.MainActivity \
-  --es VALPIX_SKIP_AUTH 1 --es VALPIX_AUTOCONFIRM 1 \
-  --es VALPIX_OPEN charge --es VALPIX_CHARGE 100
+cd android
+scripts/launch.sh VALPIX_SKIP_AUTH=1 VALPIX_AUTOCONFIRM=1 VALPIX_OPEN=charge VALPIX_CHARGE=100
 ```
 
-| Extra | Effect |
+| Setting | Effect |
 |---|---|
 | `VALPIX_OPEN` | A `valpix:` link treated as a scanned code, or `history`, `charge`, `wallet`. |
 | `VALPIX_AUTOCONFIRM=1` | Approves the opened payment or invitation without a tap. |
 | `VALPIX_CHARGE=<pesos>` | With `VALPIX_OPEN=charge` and auto-confirm, shows the QR for that amount. |
 | `VALPIX_SKIP_AUTH=1` | Skips the fingerprint. |
-| `VALPIX_RPC` | The only access point for this launch. |
-| `VALPIX_SELFTEST=1` | Checks on the phone that its cryptography matches the iPhone's; result in `adb logcat -s valpix`. |
+| `VALPIX_RPC` | The only access point for this run. |
+| `VALPIX_SELFTEST=1` | Checks on the phone that its cryptography matches the iPhone's; result in `adb logcat -s valpix`. Keep the phone awake while it runs. |
 
-Extras stick until the app's process ends (`adb shell am force-stop
-com.franky.valpix`). The wallet's address is written to
-`files/debug-pubkey.txt` (read it with `adb shell run-as com.franky.valpix
-cat files/debug-pubkey.txt`). None of this exists in release builds.
+The settings travel in a file in the app's private storage, which only `adb`
+can write. The app reads it once, removes it, and forgets the settings when
+it leaves the screen. They are deliberately **not** launch extras: the app
+opens `valpix:` links from other apps, and any app or web page can attach
+extras to such a link, which would let it pay without approval.
+
+The wallet's address is written to `files/debug-pubkey.txt` (read it with
+`adb shell run-as com.franky.valpix cat files/debug-pubkey.txt`). None of
+this exists in release builds.
+
+## Checked on a real phone, and not
+
+On a Pixel 9a against devnet, driven by the script above: the self-test,
+joining, the live balance, being paid by the iPhone simulator, paying it,
+the tick while a code is on screen, history, the wallet screen, the
+no-connection state, and a forged launch being asked for the fingerprint.
+
+Not yet done by hand: scanning with the camera, the fingerprint prompt
+itself, inviting someone, moving a wallet to another phone, and making and
+opening a backup on the device.

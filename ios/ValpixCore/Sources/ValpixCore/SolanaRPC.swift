@@ -145,9 +145,14 @@ public struct SolanaRPC: Sendable {
         return signature
     }
 
-    /// `nil` while the cluster has not seen the transaction.
-    public func signatureStatus(_ signature: String) async throws -> SignatureStatus? {
-        let value = try Self.value(try await call("getSignatureStatuses", [[signature]]))
+    /// `nil` while the cluster has not seen the transaction. An access point
+    /// answers from its memory of the last couple of minutes unless told to
+    /// `searchHistory`, which is slower and so kept for the looks that decide
+    /// whether to tell someone they have not paid.
+    public func signatureStatus(_ signature: String, searchHistory: Bool = false) async throws -> SignatureStatus? {
+        var params: [Any] = [[signature]]
+        if searchHistory { params.append(["searchTransactionHistory": true]) }
+        let value = try Self.value(try await call("getSignatureStatuses", params))
         guard let status = (value as? [Any])?.first as? [String: Any] else { return nil }
         let level = status["confirmationStatus"] as? String
         var error: String?

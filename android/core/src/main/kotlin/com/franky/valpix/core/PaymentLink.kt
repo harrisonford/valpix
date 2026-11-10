@@ -85,11 +85,7 @@ sealed class ValpixLink {
                 val value = query["name"] ?: ""
                 if (value.toByteArray().size > MAX_NAME_BYTES) return null
                 // No control or invisible formatting characters in a name.
-                val hidden = value.codePoints().anyMatch {
-                    val type = Character.getType(it)
-                    type == Character.CONTROL.toInt() || type == Character.FORMAT.toInt()
-                }
-                return if (hidden) null else value
+                return if (value.codePoints().anyMatch(::isHidden)) null else value
             }
 
             return when (action) {
@@ -128,6 +124,36 @@ sealed class ValpixLink {
                 }
                 else -> null
             }
+        }
+
+        /** Control characters and invisible formatting characters. */
+        private fun isHidden(codePoint: Int): Boolean {
+            val type = Character.getType(codePoint)
+            return type == Character.CONTROL.toInt() || type == Character.FORMAT.toInt()
+        }
+
+        /**
+         * A person's name as it may go into a code or a payment: without the
+         * hidden characters [parse] refuses (many emoji carry one), trimmed,
+         * and cut to [MAX_NAME_BYTES] without splitting a character. Whatever
+         * someone types as their name, their codes stay readable.
+         */
+        fun shareableName(name: String): String {
+            val visible = StringBuilder()
+            name.codePoints().filter { !isHidden(it) }.forEach { visible.appendCodePoint(it) }
+            val out = StringBuilder()
+            var bytes = 0
+            val trimmed = visible.toString().trim()
+            var i = 0
+            while (i < trimmed.length) {
+                val codePoint = trimmed.codePointAt(i)
+                val size = String(Character.toChars(codePoint)).toByteArray().size
+                if (bytes + size > MAX_NAME_BYTES) break
+                out.appendCodePoint(codePoint)
+                bytes += size
+                i += Character.charCount(codePoint)
+            }
+            return out.toString().trim()
         }
 
         private const val UNRESERVED = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"

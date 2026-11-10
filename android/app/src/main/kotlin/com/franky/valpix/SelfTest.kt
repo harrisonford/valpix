@@ -9,7 +9,7 @@ import com.franky.valpix.core.WalletBackup
 import kotlin.concurrent.thread
 
 /**
- * Debug builds only: `VALPIX_SELFTEST=1` checks, on the phone itself, that
+ * Debug builds only: `VALPIX_SELFTEST=1` in the debug launch file checks, on the phone itself, that
  * this Android's cryptography gives the same bytes as the iPhone's and
  * Solana's. The unit tests prove it on the Mac; this proves it on the device.
  * Read the result with `adb logcat -s valpix`.

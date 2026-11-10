@@ -216,6 +216,40 @@ private func sentSignature(_ fake: FakeTransport) -> String {
         #expect(fake.calls.filter { $0.method == "getTransaction" }.count == 2)
     }
 
+    /// Whether a status question asked the access point to search its history.
+    private static func searchesHistory(_ params: [Any]) -> Bool {
+        ((params.count > 1 ? params[1] : nil) as? [String: Any])?["searchTransactionHistory"] as? Bool == true
+    }
+
+    @Test func theLastLookSearchesHistorySoAPhoneThatSleptFindsItsPayment() async {
+        // The phone slept for minutes after sending. An access point answers
+        // a plain status question only from its short memory of recent
+        // transactions; the last look must ask it to search further back.
+        let fake = chain()
+        fake.on("sendTransaction") { _ in "sig" }
+        fake.on("getSignatureStatuses") { params in Self.searchesHistory(params) ? confirmedStatus : unknownStatus }
+        fake.on("getBlockHeight") { _ in 5_000 }
+        let outcome = await client(fake).pay(from: keypair, to: recipient, amountMicro: 1, name: "")
+        #expect(outcome == .confirmed(signature: sentSignature(fake)))
+    }
+
+    @Test func aRefusalOnSendIsCheckedAgainstTheChainBeforeSayingNotPaid() async {
+        // The first access point passed the payment on but its answer was
+        // lost; the next one refuses the same transaction as already seen.
+        let refusal = "Transaction simulation failed: This transaction has already been processed"
+        let fake = chain()
+        fake.on("sendTransaction") { _ in throw FakeRPCFailure(code: -32002, message: refusal) }
+        fake.on("getSignatureStatuses") { params in Self.searchesHistory(params) ? confirmedStatus : unknownStatus }
+        guard case .confirmed = await client(fake).pay(from: keypair, to: recipient, amountMicro: 1, name: "") else {
+            Issue.record("a payment that landed was reported as refused")
+            return
+        }
+        // And when the chain cannot be asked, the refusal stands.
+        let silent = chain()
+        silent.on("sendTransaction") { _ in throw FakeRPCFailure(code: -32002, message: refusal) }
+        #expect(await client(silent).pay(from: keypair, to: recipient, amountMicro: 1, name: "") == .failed(.rejected(refusal)))
+    }
+
     @Test func watchingForAPaymentDoesNotReadTheSameTransactionTwice() async throws {
         // A seller's phone asks again every second or two while a code is on
         // screen. Public access points allow few transaction lookups, so each

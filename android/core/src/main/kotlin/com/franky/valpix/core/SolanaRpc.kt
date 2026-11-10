@@ -165,9 +165,17 @@ class SolanaRpc(private val transport: RpcTransport) {
         return text(call("sendTransaction", params)) ?: throw RpcException.Malformed()
     }
 
-    /** `null` while the cluster has not seen the transaction. */
-    fun signatureStatus(signature: String): SignatureStatus? {
-        val params = buildJsonArray { add(buildJsonArray { add(signature) }) }
+    /**
+     * `null` while the cluster has not seen the transaction. An access point
+     * answers from its memory of the last couple of minutes unless told to
+     * `searchHistory`, which is slower and so kept for the looks that decide
+     * whether to tell someone they have not paid.
+     */
+    fun signatureStatus(signature: String, searchHistory: Boolean = false): SignatureStatus? {
+        val params = buildJsonArray {
+            add(buildJsonArray { add(signature) })
+            if (searchHistory) add(buildJsonObject { put("searchTransactionHistory", true) })
+        }
         val status = (value(call("getSignatureStatuses", params)) as? JsonArray)?.firstOrNull() as? JsonObject ?: return null
         val level = text(status["confirmationStatus"])
         val error = status["err"].takeIf(::present)?.let(::describe)

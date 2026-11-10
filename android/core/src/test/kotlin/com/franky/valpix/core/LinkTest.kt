@@ -4,6 +4,8 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -71,6 +73,23 @@ class LinkTest {
         assertEquals(32, name.toByteArray().size)
         assertEquals(ValpixLink.Pay(recipient, null, name), ValpixLink.parse(ValpixLink.Pay(recipient, null, name).string))
         assertEquals(ValpixLink.Pay(recipient, 1_000_000_000uL, ""), ValpixLink.parse("valpix:pay?to=$to&amount=1000000000"))
+    }
+
+    @Test fun aNameIsMadeSafeBeforeItGoesIntoACode() {
+        assertEquals("Ana", ValpixLink.shareableName("  Ana \n"))
+        assertEquals("ab", ValpixLink.shareableName("a\u0000b"))
+        // Many emoji are joined by an invisible character that scanners
+        // refuse in a name; left in, nobody could read this person's codes.
+        val joined = "Ana \uD83E\uDD37\u200D\u2640\uFE0F"
+        val safe = ValpixLink.shareableName(joined)
+        assertFalse('\u200D' in safe)
+        assertTrue(safe.startsWith("Ana "))
+        assertEquals(ValpixLink.Join(newcomer, safe), ValpixLink.parse(ValpixLink.Join(newcomer, safe).string))
+        assertEquals(ValpixLink.Pay(recipient, 5uL, safe), ValpixLink.parse(ValpixLink.Pay(recipient, 5uL, safe).string))
+        // At most 32 bytes, never cutting a character in half.
+        assertEquals("ñ".repeat(16), ValpixLink.shareableName("ñ".repeat(40)))
+        assertEquals("\uD83D\uDE00".repeat(8), ValpixLink.shareableName("\uD83D\uDE00".repeat(20)))
+        assertEquals("a" + "\uD83D\uDE00".repeat(7), ValpixLink.shareableName("a" + "\uD83D\uDE00".repeat(20)))
     }
 
     @Test fun veryLongLinksAreRejectedBeforeAnyWork() {
