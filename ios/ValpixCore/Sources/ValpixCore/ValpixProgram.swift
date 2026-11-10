@@ -101,13 +101,15 @@ public struct ConfigRecord: Equatable, Sendable {
     public let reviveThresholdLamports: UInt64
     public let revivePeriodSecs: Int64
     public let poolFloorLamports: UInt64
+    /// The most a payment may be charged; above it the pool sells no refund.
+    public let maxFee: UInt64
 
     public init?(accountData: Data) {
         guard let value = decode(accountData, as: "Config", { r in
-            try (r.publicKey(), r.u64(), r.u64(), r.u64(), r.u64(), r.u64(), r.i64(), r.u64())
+            try (r.publicKey(), r.u64(), r.u64(), r.u64(), r.u64(), r.u64(), r.i64(), r.u64(), r.u64())
         }) else { return nil }
         (admin, dailyRate, feeRefundLamports, floatLamports, joinSurcharge,
-         reviveThresholdLamports, revivePeriodSecs, poolFloorLamports) = value
+         reviveThresholdLamports, revivePeriodSecs, poolFloorLamports, maxFee) = value
     }
 }
 

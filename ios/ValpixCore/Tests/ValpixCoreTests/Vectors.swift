@@ -39,7 +39,7 @@ enum Vectors {
     static let reviveSelfDataHex = "fd0e87e7bc75a66e"
     static let reviveSelfMessageHex = "0100040879b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664583f34eb9f3572f20df047d19eb35124ac78ae4bee16bcee1b2bf3f3f2320c50a190564f6b80e50370ef8999433a4f57c28e85b655b811c8f3dea0735d4a242ec1ff2297fde84f96b121b4c995bfbb9da4a334a59641ea08a0a065ddfa016a96000000000000000000000000000000000000000000000000000000000000000016f27c558d3b7ffbf1f1683eb3f68e0c231c7db3e371099d560b49cbba9b773c3ddd6d45a75e4f4f1f46e0fdcdbcf03f1db3589c6be7c6af22557d60fb0bd8e506a7d517187bd16635dad40455fdc2c0c124c68f215675a5dbbacb5f08000000fffefdfcfbfaf9f8f7f6f5f4f3f2f1f0efeeedecebeae9e8e7e6e5e4e3e2e1e00106070001050302040708fd0e87e7bc75a66e"
 
-    static let configData = "mwyq4B76zILgSttdfizOCh/xJaKacWVeB65bjzuJ1z9N4Ui8TiPyEgDKmjsAAAAAiBMAAAAAAAAgORUAAAAAAAAAAAAAAAAAoB4PAAAAAAAAjScAAAAAAEBCDwAAAAAA/f4="
+    static let configData = "mwyq4B76zILgSttdfizOCh/xJaKacWVeB65bjzuJ1z9N4Ui8TiPyEgDKmjsAAAAAiBMAAAAAAAAgORUAAAAAAAAAAAAAAAAAoB4PAAAAAAAAjScAAAAAAEBCDwAAAAAAAC0xAQAAAAD9/g=="
     static let configAdmin = "G6YXdapFrMSQWkHAgSKivdULpYHmUATvhfMvc6hwLtyX"
     static let configDailyRate: UInt64 = 1000000000
     static let configFeeRefund: UInt64 = 5000
@@ -48,20 +48,21 @@ enum Vectors {
     static let configReviveThreshold: UInt64 = 990880
     static let configRevivePeriod: Int64 = 2592000
     static let configPoolFloor: UInt64 = 1000000
+    static let configMaxFee: UInt64 = 20000000
     static let poolData = "8ZptBBGxbbzXgytW0QEAAP4="
     static let poolClpcReserve: UInt64 = 1998605485015
-    static let memberData = "NhOiFR2mEcZZI+4nepF2amcEAaFeEoq4QneHXpKb4Ud7HbuhiatJ0QAAAAAAAAAAlBzzagAAAACUHPNqAAAAAJa//t/bIeJb2Gak6hOl3UbkM/eM//suGXTdI0f4qWiUAAAAAAAAAAD/"
+    static let memberData = "NhOiFR2mEcZZI+4nepF2amcEAaFeEoq4QneHXpKb4Ud7HbuhiatJ0QAAAAAAAAAAdB/zagAAAAB0H/NqAAAAAJa//t/bIeJb2Gak6hOl3UbkM/eM//suGXTdI0f4qWiUAAAAAAAAAAD/"
     static let memberWallet = "6zy4bg3kTp7giwD2uJ82WRQgrV6JKzMuUQYR7RNHeB3E"
     static let memberSettled: UInt64 = 0
-    static let memberLastSettled: Int64 = 1794317460
-    static let memberCreated: Int64 = 1794317460
+    static let memberLastSettled: Int64 = 1794318196
+    static let memberCreated: Int64 = 1794318196
     static let memberInviter = "B9TxUqC9YFVMCtnc6y3KeY8inKtQDxX9Wp3XKNnpQPMD"
     static let memberLastRevive: Int64 = 0
-    static let paidLogLine = "Program data: 8MER7u7SgeuWv/7f2yHiW9hmpOoTpd1G5DP3jP/7Lhl03SNH+KlolDWabUKbXYeOu+yuJ+ghOG8Og+SN/8adD+wWGuum47KzAKPhEQAAAAB0Og8AAAAAAAYAAABDYW1pbGGRHPNqAAAAAA=="
+    static let paidLogLine = "Program data: 8MER7u7SgeuWv/7f2yHiW9hmpOoTpd1G5DP3jP/7Lhl03SNH+KlolDWabUKbXYeOu+yuJ+ghOG8Og+SN/8adD+wWGuum47KzAKPhEQAAAAB0Og8AAAAAAAYAAABDYW1pbGFzH/NqAAAAAA=="
     static let paidPayer = "B9TxUqC9YFVMCtnc6y3KeY8inKtQDxX9Wp3XKNnpQPMD"
     static let paidRecipient = "4cFBfPGNbmUUZt3vuT2qYBFRBKhVLJigyL4GWHNrYsEr"
     static let paidAmount: UInt64 = 300000000
     static let paidFee: UInt64 = 998004
     static let paidName = "Camila"
-    static let paidTs: Int64 = 1794317457
+    static let paidTs: Int64 = 1794318195
 }

@@ -81,6 +81,7 @@ try {
     static let configReviveThreshold: UInt64 = ${c.reviveThresholdLamports}
     static let configRevivePeriod: Int64 = ${c.revivePeriodSecs}
     static let configPoolFloor: UInt64 = ${c.poolFloorLamports}
+    static let configMaxFee: UInt64 = ${c.maxFee}
     static let poolData = "${pl!.data.toString("base64")}"
     static let poolClpcReserve: UInt64 = ${p.clpcReserve}
     static let memberData = "${mi!.data.toString("base64")}"

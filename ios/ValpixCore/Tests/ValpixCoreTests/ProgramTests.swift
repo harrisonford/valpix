@@ -89,6 +89,7 @@ private let blockhash = Base58.decode(Vectors.blockhash)!
         #expect(record.reviveThresholdLamports == Vectors.configReviveThreshold)
         #expect(record.revivePeriodSecs == Vectors.configRevivePeriod)
         #expect(record.poolFloorLamports == Vectors.configPoolFloor)
+        #expect(record.maxFee == Vectors.configMaxFee)
     }
 
     @Test func decodesThePoolRecord() throws {

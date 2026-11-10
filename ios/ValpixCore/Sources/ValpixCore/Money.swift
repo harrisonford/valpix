@@ -24,11 +24,15 @@ public enum Money {
         return remainder == 0 ? quotient : quotient + 1
     }
 
-    /// The CLPC fee of a payment right now, or `nil` when the pool is too low
-    /// to refund, in which case the payment costs no CLPC.
-    public static func fee(solReserve: UInt64, clpcReserve: UInt64, refundLamports: UInt64, floorLamports: UInt64) -> UInt64? {
-        guard solReserve >= refundLamports, solReserve - refundLamports >= floorLamports else { return nil }
-        return quoteClpcIn(solReserve: solReserve, clpcReserve: clpcReserve, lamportsOut: refundLamports)
+    /// The CLPC fee of a payment right now, or `nil` when the pool will not
+    /// refund it (it is below its floor, or its price is above the cap), in
+    /// which case the payment costs no CLPC.
+    public static func fee(solReserve: UInt64, clpcReserve: UInt64, refundLamports: UInt64, floorLamports: UInt64, maxFee: UInt64) -> UInt64? {
+        guard solReserve >= refundLamports, solReserve - refundLamports >= floorLamports,
+              let price = quoteClpcIn(solReserve: solReserve, clpcReserve: clpcReserve, lamportsOut: refundLamports),
+              price <= maxFee
+        else { return nil }
+        return price
     }
 
     /// A member's balance at a moment of chain time. Fractions of a second

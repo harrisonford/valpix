@@ -27,8 +27,18 @@ private func member(settled: UInt64, at ts: Int64) -> MemberRecord {
     }
 
     @Test func feeIsNilWhenThePoolWouldFallBelowItsFloor() {
-        #expect(Money.fee(solReserve: 14_000, clpcReserve: 200_000 * Money.unit, refundLamports: 5_000, floorLamports: 10_000) == nil)
-        #expect(Money.fee(solReserve: 15_000, clpcReserve: 200_000 * Money.unit, refundLamports: 5_000, floorLamports: 10_000) != nil)
+        #expect(Money.fee(solReserve: 14_000, clpcReserve: 1, refundLamports: 5_000, floorLamports: 10_000, maxFee: .max) == nil)
+        #expect(Money.fee(solReserve: 15_000, clpcReserve: 1, refundLamports: 5_000, floorLamports: 10_000, maxFee: .max) != nil)
+    }
+
+    @Test func feeIsNilWhenThePoolAsksMoreThanTheCap() {
+        let cap = 20 * Money.unit
+        // The starting pool: about 1 CLPC, well under the cap.
+        #expect(Money.fee(solReserve: 1_000_000_000, clpcReserve: 200_000 * Money.unit, refundLamports: 5_000, floorLamports: 10_000, maxFee: cap) == 1_000_006)
+        // Drained to a hundredth: about 995 CLPC, so the pool stops selling.
+        #expect(Money.fee(solReserve: 1_010_000, clpcReserve: 200_000 * Money.unit, refundLamports: 5_000, floorLamports: 10_000, maxFee: cap) == nil)
+        // Exactly at the cap still counts.
+        #expect(Money.fee(solReserve: 1_000_000_000, clpcReserve: 200_000 * Money.unit, refundLamports: 5_000, floorLamports: 10_000, maxFee: 1_000_006) == 1_000_006)
     }
 
     @Test func liveBalanceAddsIncomeSinceTheLastSettlement() {
