@@ -9,6 +9,9 @@ skip-lint = false
 [programs.localnet]
 valpix = "5AVhdmuAbx8HWJdR6h7QAPojfJHt7Z6TAa9pwj12wqcx"
 
+[programs.devnet]
+valpix = "5AVhdmuAbx8HWJdR6h7QAPojfJHt7Z6TAa9pwj12wqcx"
+
 [provider]
 cluster = "localnet"
 wallet = "~/.config/solana/id.json"

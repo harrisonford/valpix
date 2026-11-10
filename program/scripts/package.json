@@ -1,0 +1,17 @@
+{
+  "name": "valpix-admin",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "admin": "tsx admin.ts"
+  },
+  "dependencies": {
+    "@anchor-lang/core": "1.2.2",
+    "@solana/web3.js": "^1.98.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "@types/node": "^22.0.0"
+  }
+}

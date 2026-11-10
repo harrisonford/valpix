@@ -1,0 +1,1357 @@
+{
+  "address": "5AVhdmuAbx8HWJdR6h7QAPojfJHt7Z6TAa9pwj12wqcx",
+  "metadata": {
+    "name": "valpix",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "admin_create_member",
+      "discriminator": [
+        36,
+        202,
+        207,
+        4,
+        179,
+        39,
+        177,
+        35
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "wallet",
+          "docs": [
+            "The new member's wallet."
+          ],
+          "writable": true
+        },
+        {
+          "name": "member",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wallet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "fund_pool",
+      "docs": [
+        "Adds SOL to the pool in exchange for CLPC at the current price."
+      ],
+      "discriminator": [
+        36,
+        57,
+        233,
+        176,
+        181,
+        20,
+        87,
+        159
+      ],
+      "accounts": [
+        {
+          "name": "funder",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "funder_member",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "funder"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "lamports",
+          "type": "u64"
+        },
+        {
+          "name": "min_clpc_out",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "initialize",
+      "discriminator": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "docs": [
+            "Holds the pool's SOL. Owned by the system program; only this program",
+            "can sign for it."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": {
+              "name": "InitParams"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "join",
+      "docs": [
+        "Creates an account for a newcomer, paid for by an existing member."
+      ],
+      "discriminator": [
+        206,
+        55,
+        2,
+        106,
+        113,
+        220,
+        17,
+        163
+      ],
+      "accounts": [
+        {
+          "name": "inviter",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "inviter_member",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "inviter"
+              }
+            ]
+          }
+        },
+        {
+          "name": "newcomer",
+          "docs": [
+            "The newcomer's wallet. It does not sign: the key came from their QR."
+          ],
+          "writable": true
+        },
+        {
+          "name": "newcomer_member",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "newcomer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "instructions",
+          "address": "Sysvar1nstructions1111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "pay",
+      "docs": [
+        "Moves `amount` micro-CLPC to another member. The pool returns the",
+        "Solana base fee to the payer and charges its price in CLPC."
+      ],
+      "discriminator": [
+        119,
+        18,
+        216,
+        65,
+        192,
+        117,
+        122,
+        220
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "docs": [
+            "Pays the Solana fee and gets it back from the pool."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "payer_member",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "payer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "recipient_member",
+          "writable": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "instructions",
+          "address": "Sysvar1nstructions1111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "payer_name",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "revive",
+      "docs": [
+        "Tops another member's drained wallet back up to the float."
+      ],
+      "discriminator": [
+        202,
+        187,
+        79,
+        18,
+        27,
+        117,
+        147,
+        82
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "payer_member",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "payer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "target",
+          "docs": [
+            "The wallet to top up."
+          ],
+          "writable": true
+        },
+        {
+          "name": "target_member",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "target"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "instructions",
+          "address": "Sysvar1nstructions1111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "revive_self",
+      "docs": [
+        "Tops the caller's own wallet back up to the float."
+      ],
+      "discriminator": [
+        253,
+        14,
+        135,
+        231,
+        188,
+        117,
+        166,
+        110
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "payer_member",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  109,
+                  98,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "payer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "instructions",
+          "address": "Sysvar1nstructions1111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "update_config",
+      "discriminator": [
+        29,
+        158,
+        252,
+        191,
+        10,
+        83,
+        219,
+        99
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": {
+              "name": "ConfigParams"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Config",
+      "discriminator": [
+        155,
+        12,
+        170,
+        224,
+        30,
+        250,
+        204,
+        130
+      ]
+    },
+    {
+      "name": "Member",
+      "discriminator": [
+        54,
+        19,
+        162,
+        21,
+        29,
+        166,
+        17,
+        198
+      ]
+    },
+    {
+      "name": "Pool",
+      "discriminator": [
+        241,
+        154,
+        109,
+        4,
+        17,
+        177,
+        109,
+        188
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "Funded",
+      "discriminator": [
+        67,
+        84,
+        56,
+        88,
+        192,
+        12,
+        201,
+        177
+      ]
+    },
+    {
+      "name": "Joined",
+      "discriminator": [
+        16,
+        20,
+        44,
+        48,
+        132,
+        189,
+        68,
+        98
+      ]
+    },
+    {
+      "name": "Paid",
+      "discriminator": [
+        240,
+        193,
+        17,
+        238,
+        238,
+        210,
+        129,
+        235
+      ]
+    },
+    {
+      "name": "Revived",
+      "discriminator": [
+        163,
+        35,
+        218,
+        188,
+        252,
+        52,
+        127,
+        130
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "NotAdmin",
+      "msg": "Only the admin can do this"
+    },
+    {
+      "code": 6001,
+      "name": "AlreadyMember",
+      "msg": "This wallet already has an account"
+    },
+    {
+      "code": 6002,
+      "name": "NotMember",
+      "msg": "This wallet has no account"
+    },
+    {
+      "code": 6003,
+      "name": "SelfPayment",
+      "msg": "You cannot pay yourself"
+    },
+    {
+      "code": 6004,
+      "name": "ZeroAmount",
+      "msg": "The amount must be more than zero"
+    },
+    {
+      "code": 6005,
+      "name": "NameTooLong",
+      "msg": "The name is longer than 32 bytes"
+    },
+    {
+      "code": 6006,
+      "name": "InsufficientFunds",
+      "msg": "Not enough CLPC for the amount and its fee"
+    },
+    {
+      "code": 6007,
+      "name": "SlippageExceeded",
+      "msg": "The pool would pay out less CLPC than the minimum asked for"
+    },
+    {
+      "code": 6008,
+      "name": "NotAlone",
+      "msg": "A transaction may hold only one valpix instruction"
+    },
+    {
+      "code": 6009,
+      "name": "CalledFromProgram",
+      "msg": "This instruction cannot be called from another program"
+    },
+    {
+      "code": 6010,
+      "name": "ReviveNotNeeded",
+      "msg": "This wallet still holds enough SOL"
+    },
+    {
+      "code": 6011,
+      "name": "ReviveTooSoon",
+      "msg": "This wallet was revived too recently"
+    },
+    {
+      "code": 6012,
+      "name": "PoolTooLow",
+      "msg": "The pool does not hold enough SOL for this"
+    },
+    {
+      "code": 6013,
+      "name": "Overflow",
+      "msg": "Arithmetic overflow"
+    }
+  ],
+  "types": [
+    {
+      "name": "Config",
+      "docs": [
+        "The rules. One per program."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "docs": [
+              "The only key that may change these rules or create members directly."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "daily_rate",
+            "docs": [
+              "Income per member per day, in micro-CLPC."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "fee_refund_lamports",
+            "docs": [
+              "SOL returned to whoever sends a payment, join or revival: Solana's",
+              "base fee for one signature."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "float_lamports",
+            "docs": [
+              "SOL a member's wallet starts with, and is topped back up to."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "join_surcharge",
+            "docs": [
+              "Extra micro-CLPC charged for a join, on top of the pool price."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "revive_threshold_lamports",
+            "docs": [
+              "A wallet may be revived only while it holds less than this."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "revive_period_secs",
+            "docs": [
+              "Minimum seconds between two revivals of the same member."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "pool_floor_lamports",
+            "docs": [
+              "The pool stops paying out once its SOL would fall below this."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "vault_bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ConfigParams",
+      "docs": [
+        "Every rule the admin may change after setup."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "daily_rate",
+            "type": "u64"
+          },
+          {
+            "name": "fee_refund_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "float_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "join_surcharge",
+            "type": "u64"
+          },
+          {
+            "name": "revive_threshold_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "revive_period_secs",
+            "type": "i64"
+          },
+          {
+            "name": "pool_floor_lamports",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Funded",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "funder",
+            "type": "pubkey"
+          },
+          {
+            "name": "lamports",
+            "type": "u64"
+          },
+          {
+            "name": "clpc_out",
+            "docs": [
+              "Micro-CLPC the funder received from the pool."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "ts",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "InitParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "float_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "revive_threshold_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "pool_floor_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "initial_sol_lamports",
+            "docs": [
+              "SOL the admin puts into the pool to start it."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "initial_clpc_reserve",
+            "docs": [
+              "CLPC created for the pool. With the SOL above, this sets the first fee."
+            ],
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Joined",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "inviter",
+            "type": "pubkey"
+          },
+          {
+            "name": "newcomer",
+            "type": "pubkey"
+          },
+          {
+            "name": "cost",
+            "docs": [
+              "Micro-CLPC the inviter gave the pool."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "ts",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Member",
+      "docs": [
+        "One person's account."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "wallet",
+            "type": "pubkey"
+          },
+          {
+            "name": "settled",
+            "docs": [
+              "Micro-CLPC as of `last_settled_ts`. Income since then is added on top."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "last_settled_ts",
+            "type": "i64"
+          },
+          {
+            "name": "created_ts",
+            "type": "i64"
+          },
+          {
+            "name": "inviter",
+            "type": "pubkey"
+          },
+          {
+            "name": "last_revive_ts",
+            "docs": [
+              "Zero until the member's wallet is first revived."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Paid",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "payer",
+            "type": "pubkey"
+          },
+          {
+            "name": "recipient",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "docs": [
+              "Micro-CLPC that reached the recipient."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "fee",
+            "docs": [
+              "Micro-CLPC the payer gave the pool. Zero when the pool could not refund."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "name",
+            "docs": [
+              "The name the payer chose to show. Unverified."
+            ],
+            "type": "string"
+          },
+          {
+            "name": "ts",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Pool",
+      "docs": [
+        "The CLPC side of the fee pool. The SOL side is whatever the vault",
+        "address holds above its own rent minimum."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "clpc_reserve",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Revived",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "payer",
+            "type": "pubkey"
+          },
+          {
+            "name": "target",
+            "type": "pubkey"
+          },
+          {
+            "name": "cost",
+            "docs": [
+              "Micro-CLPC the payer gave the pool."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "ts",
+            "type": "i64"
+          }
+        ]
+      }
+    }
+  ]
+}
