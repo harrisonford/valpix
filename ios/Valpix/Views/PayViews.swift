@@ -156,14 +156,19 @@ struct FailedView: View {
         case .noRoute: "wifi.slash"
         case .expired: "clock.badge.xmark"
         case .rejected: "xmark"
+        case .unconfirmed: "questionmark"
         }
     }
+
+    /// Only a failure that certainly did not pay strikes the amount out.
+    private var certainlyNotPaid: Bool { reason != .unconfirmed }
 
     private var spoken: String {
         switch reason {
         case .noRoute: "Sin conexión. No se pagó."
         case .expired: "No se confirmó a tiempo. No se pagó."
         case .rejected: "Pago rechazado. No se pagó."
+        case .unconfirmed: "No se pudo confirmar. Revisa tus movimientos antes de pagar de nuevo."
         }
     }
 
@@ -178,7 +183,7 @@ struct FailedView: View {
                 Text(PesoFormat.whole(amountPesos))
                     .font(Theme.number(44))
                     .foregroundStyle(Theme.dim)
-                    .strikethrough(true, color: Theme.dim)
+                    .strikethrough(certainlyNotPaid, color: Theme.dim)
             }
         }
         .sensoryFeedback(.error, trigger: true)

@@ -8,6 +8,10 @@ struct RootView: View {
         @Bindable var model = model
         ZStack {
             Theme.background.ignoresSafeArea()
+            if model.locked, model.phase != .storageFailed {
+                // Nothing is shown until the person unlocks. Tap to try again.
+                GlassButton(icon: "faceid", label: "Abrir valpix") { Task { await model.unlockApp() } }
+            } else {
             switch model.phase {
             case .loading: EmptyView()
             case .needsJoin: JoinView()
@@ -17,6 +21,7 @@ struct RootView: View {
                     .font(.system(size: 44, weight: .thin))
                     .foregroundStyle(Theme.dim)
                     .accessibilityLabel("Este teléfono no puede guardar la billetera")
+            }
             }
         }
         .fullScreenCover(isPresented: Binding(get: { model.flow != nil }, set: { if !$0 { model.flow = nil } })) {
@@ -38,6 +43,7 @@ struct FlowView: View {
                 case .scan: ScanView()
                 case .confirm(let to, let amount, let name): ConfirmView(recipient: to, fixedAmount: amount, name: name)
                 case .invite(let key, let name): InviteView(newcomer: key, name: name)
+                case .adopt(let seed): AdoptView(seed: seed)
                 case .unlock(let blob): UnlockView(blob: blob)
                 case .sending(let amount, let name): SendingView(amountPesos: amount, name: name)
                 case .done(let amount, let name, let incoming): DoneView(amountPesos: amount, name: name, incoming: incoming)

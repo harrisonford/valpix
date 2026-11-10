@@ -49,8 +49,11 @@ public enum FailureReason: Equatable, Sendable {
     case noRoute
     /// The program or the chain refused it; carries the error's name or number.
     case rejected(String)
-    /// It did not confirm before the transaction's time ran out.
+    /// It did not confirm before the transaction's time ran out. Not paid.
     case expired
+    /// It was sent, and the chain could not be reached to learn what
+    /// happened. It may have been paid.
+    case unconfirmed
 }
 
 public enum Outcome: Equatable, Sendable {
@@ -118,37 +121,55 @@ public struct ValpixClient: Sendable {
         await submit(program.reviveSelf(payer: keypair.publicKey), signer: keypair)
     }
 
-    /// Signs, sends and follows one instruction to a definite end. It never
-    /// reports success unless the chain confirmed the transaction.
+    /// Signs, sends and follows one instruction to its end.
+    ///
+    /// It reports `confirmed` only when the chain says so, and it reports a
+    /// failure that means "not paid" only when that is certain. Once the
+    /// transaction may have left the phone, route trouble is retried, and if
+    /// the answer never comes the outcome is `unconfirmed`, never "failed":
+    /// telling someone a payment failed when it landed makes them pay twice.
     func submit(_ instruction: Instruction, signer: Keypair) async -> Outcome {
-        let signature: String
-        let lastValidBlockHeight: UInt64
+        // Nothing has been signed yet: failing here is a clean "no route".
+        guard let latest = try? await rpc.latestBlockhash() else { return .failed(.noRoute) }
+        let message = Transaction.compile(instructions: [instruction], feePayer: signer.publicKey, recentBlockhash: latest.blockhash)
+        guard let wire = try? Transaction.sign(message: message, signers: [signer]) else {
+            return .failed(.rejected("signing"))
+        }
+        // The transaction's own signature, so it can be followed whatever
+        // the access point answers, or fails to answer.
+        let signature = Base58.encode(wire.dropFirst().prefix(64))
+
         do {
-            let latest = try await rpc.latestBlockhash()
-            lastValidBlockHeight = latest.lastValidBlockHeight
-            let message = Transaction.compile(instructions: [instruction], feePayer: signer.publicKey, recentBlockhash: latest.blockhash)
-            signature = try await rpc.send(try Transaction.sign(message: message, signers: [signer]))
+            _ = try await rpc.send(wire)
         } catch let RPCError.rpc(_, message, logs) {
+            // The access point refused it before passing it on.
             return .failed(.rejected(Self.errorName(in: logs) ?? message))
         } catch {
-            return .failed(.noRoute)
+            // No answer. It may have been passed on all the same: go and look.
         }
 
-        let deadline = ContinuousClock.now + timeout
-        while ContinuousClock.now < deadline {
+        let deadline = Date().addingTimeInterval(TimeInterval(timeout.components.seconds) + Double(timeout.components.attoseconds) / 1e18)
+        while true {
             do {
-                if let status = try await rpc.signatureStatus(signature) {
-                    if let error = status.error { return .failed(.rejected(error)) }
-                    if status.isConfirmed { return .confirmed(signature: signature) }
-                } else if try await rpc.blockHeight() > lastValidBlockHeight {
-                    return .failed(.expired)
+                if let settled = try await settledOutcome(signature) { return settled }
+                if try await rpc.blockHeight() > latest.lastValidBlockHeight {
+                    // Too late to land now. One last look, in case it made
+                    // one of the final blocks.
+                    return try await settledOutcome(signature) ?? .failed(.expired)
                 }
             } catch {
-                return .failed(.noRoute)
+                // Route trouble: keep trying until the deadline.
             }
+            if Date() >= deadline { return .failed(.unconfirmed) }
             try? await Task.sleep(for: pollInterval)
         }
-        return .failed(.expired)
+    }
+
+    /// The outcome, if the chain has one for this signature yet.
+    private func settledOutcome(_ signature: String) async throws -> Outcome? {
+        guard let status = try await rpc.signatureStatus(signature) else { return nil }
+        if let error = status.error { return .failed(.rejected(error)) }
+        return status.isConfirmed ? .confirmed(signature: signature) : nil
     }
 
     /// Finds "Error Code: Name." in a program log.
@@ -168,7 +189,7 @@ public struct ValpixClient: Sendable {
         var entries = [HistoryEntry]()
         for info in signatures where !info.failed {
             guard let logs = try await rpc.transactionLogs(info.signature) else { continue }
-            for event in logs.compactMap(ValpixEvent.init(logLine:)) {
+            for event in ValpixEvent.events(in: logs, programId: program.programId) {
                 switch event {
                 case .paid(let paid) where paid.recipient == wallet:
                     entries.append(HistoryEntry(signature: info.signature, ts: paid.ts, kind: .received, counterparty: paid.payer, name: paid.name, amountMicro: paid.amount))

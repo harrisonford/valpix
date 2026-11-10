@@ -53,7 +53,10 @@
 	<string>Dark</string>
 	<key>ValpixProgramID</key>
 	<string>5AVhdmuAbx8HWJdR6h7QAPojfJHt7Z6TAa9pwj12wqcx</string>
-	<key>ValpixRPCURL</key>
-	<string>http://127.0.0.1:8899</string>
+	<key>ValpixRPCURLs</key>
+	<array>
+		<string>http://127.0.0.1:8899</string>
+		<string>https://api.devnet.solana.com</string>
+	</array>
 </dict>
 </plist>

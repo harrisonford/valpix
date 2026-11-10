@@ -16,7 +16,11 @@ public enum ValpixLink: Equatable, Sendable {
     public static let maxAmountPesos: UInt64 = 1_000_000_000
     public static let maxNameBytes = 32
 
+    /// Longer than any real valpix link; anything bigger is not parsed at all.
+    public static let maxLength = 1_024
+
     public init?(_ text: String) {
+        guard text.utf8.count <= Self.maxLength else { return nil }
         guard let parts = URLComponents(string: text.trimmingCharacters(in: .whitespacesAndNewlines)),
               parts.scheme?.lowercased() == "valpix"
         else { return nil }

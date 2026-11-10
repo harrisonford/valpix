@@ -7,12 +7,12 @@ struct ScanView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            CameraPreview { model.open(text: $0) }
+            CameraPreview { model.open(text: $0, from: .scanned) }
                 .ignoresSafeArea()
                 .accessibilityLabel("Cámara")
             // A code can also arrive as text: a link someone sent.
             GlassButton(icon: "doc.on.clipboard", label: "Pegar código", size: 52) {
-                if let text = UIPasteboard.general.string { model.open(text: text) }
+                if let text = UIPasteboard.general.string { model.open(text: text, from: .scanned) }
             }
             .padding(.bottom, 36)
         }

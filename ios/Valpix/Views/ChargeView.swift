@@ -20,7 +20,7 @@ struct ChargeView: View {
             }
             .task {
                 // Only a payment the chain has confirmed ends this screen.
-                if let paid = await model.nextIncomingPayment(after: startedAt) {
+                if let paid = await model.nextIncomingPayment(requestedPesos: amount > 0 ? amount : nil, after: startedAt) {
                     model.remember(name: paid.name, for: paid.counterparty)
                     model.flow = .done(
                         amountPesos: Money.wholePesos(micro: paid.amountMicro),

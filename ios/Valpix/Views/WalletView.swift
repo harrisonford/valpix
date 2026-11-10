@@ -35,6 +35,17 @@ struct WalletView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
                     .textSelection(.enabled)
+                // The person's own access point to Solana, tried first.
+                TextField("", text: Binding(get: { model.accessPoint }, set: { model.accessPoint = $0 }),
+                          prompt: Text("https://").foregroundStyle(Theme.dim))
+                    .font(.system(size: 13, design: .monospaced))
+                    .foregroundStyle(Theme.soft)
+                    .multilineTextAlignment(.center)
+                    .keyboardType(.URL)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .submitLabel(.done)
+                    .accessibilityLabel("Tu propio punto de acceso")
             }
             Spacer()
             if shown == nil && !askingPassword {
@@ -94,7 +105,36 @@ struct UnlockView: View {
     }
 
     private func open() {
-        wrong = !model.unlock(blob: blob, password: password)
-        if wrong { password = "" }
+        let attempt = password
+        Task {
+            wrong = !(await model.unlock(blob: blob, password: attempt))
+            if wrong { password = "" }
+        }
+    }
+}
+
+/// A scanned wallet: one button to make it this phone's wallet.
+struct AdoptView: View {
+    @Environment(AppModel.self) private var model
+    let seed: Data
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Spacer()
+            Image(systemName: "iphone.and.arrow.forward.inward")
+                .font(.system(size: 54, weight: .thin))
+                .foregroundStyle(Theme.foreground)
+            if let key = Keypair(seed: seed)?.publicKey {
+                Text(model.displayName(for: key))
+                    .font(Theme.caption)
+                    .foregroundStyle(Theme.soft)
+                    .padding(.top, 18)
+            }
+            Spacer()
+            GlassButton(icon: "faceid", label: "Usar esta billetera") {
+                Task { _ = await model.adopt(seed: seed) }
+            }
+            .padding(.bottom, 36)
+        }
     }
 }

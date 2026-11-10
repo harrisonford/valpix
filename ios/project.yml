@@ -42,5 +42,8 @@ targets:
           - CFBundleURLName: cl.valpix.app
             CFBundleURLSchemes: [valpix]
         # Where the app reaches Solana, and which program it talks to.
-        ValpixRPCURL: http://127.0.0.1:8899
+        # Tried in order. The person can add their own in the wallet screen.
+        ValpixRPCURLs:
+          - http://127.0.0.1:8899
+          - https://api.devnet.solana.com
         ValpixProgramID: 5AVhdmuAbx8HWJdR6h7QAPojfJHt7Z6TAa9pwj12wqcx

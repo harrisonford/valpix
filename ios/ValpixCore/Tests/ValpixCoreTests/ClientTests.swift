@@ -34,8 +34,24 @@ private func chain(member: Bool = true, vaultLamports: UInt64 = 10 * 1_000_000_0
     return fake
 }
 
-private func client(_ transport: RPCTransport) -> ValpixClient {
-    ValpixClient(rpc: SolanaRPC(transport: transport), program: program, pollInterval: .milliseconds(1))
+private func client(_ transport: RPCTransport, timeout: Duration = .seconds(5)) -> ValpixClient {
+    ValpixClient(rpc: SolanaRPC(transport: transport), program: program, pollInterval: .milliseconds(1), timeout: timeout)
+}
+
+/// Counts calls across the fake's handlers.
+private final class Counter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value = 0
+    func next() -> Int { lock.withLock { value += 1; return value } }
+}
+
+private var confirmedStatus: [String: Any] { ["context": ["slot": 101], "value": [["confirmationStatus": "confirmed", "err": NSNull()]]] }
+private var unknownStatus: [String: Any] { ["context": ["slot": 101], "value": [NSNull()]] }
+
+/// The signature the client must derive from what it sent.
+private func sentSignature(_ fake: FakeTransport) -> String {
+    let wire = Data(base64Encoded: fake.calls.first { $0.method == "sendTransaction" }!.params[0] as! String)!
+    return Base58.encode(wire.dropFirst().prefix(64))
 }
 
 @Suite struct ValpixClientTests {
@@ -80,7 +96,8 @@ private func client(_ transport: RPCTransport) -> ValpixClient {
             ["context": ["slot": 101], "value": [["confirmationStatus": "confirmed", "err": NSNull()]]]
         }
         let outcome = await client(fake).pay(from: keypair, to: recipient, amountMicro: 300_000_000, name: "Camila")
-        #expect(outcome == .confirmed(signature: "sig111"))
+        // The signature is the transaction's own, not whatever the access point says.
+        #expect(outcome == .confirmed(signature: sentSignature(fake)))
 
         let sent = fake.calls.first { $0.method == "sendTransaction" }!.params
         let wire = try #require(Data(base64Encoded: sent[0] as! String))
@@ -130,12 +147,46 @@ private func client(_ transport: RPCTransport) -> ValpixClient {
         #expect(outcome == .failed(.expired))
     }
 
-    @Test func payLosesItsRouteMidway() async {
+    // Once a payment has been sent, "failed" would invite paying twice. The
+    // client keeps looking until it knows.
+    @Test func aBriefLossOfRouteAfterSendingIsNotAFailure() async {
         let fake = chain()
-        fake.on("sendTransaction") { _ in "sig444" }
-        fake.on("getSignatureStatuses") { _ in throw RPCError.transport("gone") }
+        let polls = Counter()
+        fake.on("sendTransaction") { _ in "ignored" }
+        fake.on("getSignatureStatuses") { _ in
+            if polls.next() < 3 { throw RPCError.transport("gone") }
+            return confirmedStatus
+        }
         let outcome = await client(fake).pay(from: keypair, to: recipient, amountMicro: 1, name: "")
-        #expect(outcome == .failed(.noRoute))
+        #expect(outcome == .confirmed(signature: sentSignature(fake)))
+    }
+
+    @Test func aSendThatTimedOutButLandedIsFoundByItsSignature() async {
+        let fake = chain()
+        fake.on("sendTransaction") { _ in throw RPCError.transport("timed out") }
+        fake.on("getSignatureStatuses") { _ in confirmedStatus }
+        let outcome = await client(fake).pay(from: keypair, to: recipient, amountMicro: 1, name: "")
+        #expect(outcome == .confirmed(signature: sentSignature(fake)))
+        let asked = fake.calls.first { $0.method == "getSignatureStatuses" }!.params[0] as! [String]
+        #expect(asked == [sentSignature(fake)])
+    }
+
+    @Test func aPaymentThatLandsInTheLastBlocksIsNotCalledExpired() async {
+        let fake = chain()
+        let polls = Counter()
+        fake.on("sendTransaction") { _ in "ignored" }
+        fake.on("getSignatureStatuses") { _ in polls.next() == 1 ? unknownStatus : confirmedStatus }
+        fake.on("getBlockHeight") { _ in 501 }
+        let outcome = await client(fake).pay(from: keypair, to: recipient, amountMicro: 1, name: "")
+        #expect(outcome == .confirmed(signature: sentSignature(fake)))
+    }
+
+    @Test func whenItCannotFindOutItSaysSoInsteadOfClaimingFailure() async {
+        let fake = chain()
+        fake.on("sendTransaction") { _ in "ignored" }
+        fake.on("getSignatureStatuses") { _ in throw RPCError.transport("gone") }
+        let outcome = await client(fake, timeout: .milliseconds(30)).pay(from: keypair, to: recipient, amountMicro: 1, name: "")
+        #expect(outcome == .failed(.unconfirmed))
     }
 
     @Test func historyTurnsEventsIntoEntriesSeenFromOneWallet() async throws {
@@ -147,7 +198,10 @@ private func client(_ transport: RPCTransport) -> ValpixClient {
              ["signature": "s2", "blockTime": Vectors.paidTs, "err": ["x": 1]]] as [Any]
         }
         fake.on("getTransaction") { _ in
-            ["meta": ["logMessages": ["Program log: Instruction: Pay", Vectors.paidLogLine]]]
+            ["meta": ["logMessages": [
+                "Program \(Vectors.programId) invoke [1]", "Program log: Instruction: Pay", Vectors.paidLogLine,
+                "Program \(Vectors.programId) success",
+            ]]]
         }
         let received = try await client(fake).history(for: payee, limit: 10)
         #expect(received == [HistoryEntry(

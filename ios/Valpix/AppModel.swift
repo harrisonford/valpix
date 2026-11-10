@@ -12,6 +12,7 @@ final class AppModel {
         case scan
         case confirm(to: PublicKey, amountPesos: UInt64?, name: String)
         case invite(key: PublicKey, name: String)
+        case adopt(seed: Data)
         case unlock(blob: Data)
         case sending(amountPesos: UInt64, name: String)
         case done(amountPesos: UInt64?, name: String, incoming: Bool)
@@ -26,23 +27,29 @@ final class AppModel {
     private(set) var hasRoute = true
     private(set) var history: [HistoryEntry] = []
     private(set) var keypair: Keypair
+    /// Until the person has unlocked the app with face, fingerprint or passcode.
+    private(set) var locked = true
+    /// The chain has answered that this phone's key has no account.
+    private var chainConfirmedNoAccount = false
     var flow: Flow?
     var name: String { didSet { defaults.set(name, forKey: "name") } }
 
-    private let client: ValpixClient
+    private var client: ValpixClient
+    private let store = KeychainStore()
     private let defaults = UserDefaults.standard
     private var names: [String: String]
     private var refreshTask: Task<Void, Never>?
 
     init() {
-        if let stored = KeyStore.loadOrCreate() {
+        if let stored = WalletKeeper.loadOrCreate(in: KeychainStore()) {
             keypair = stored
         } else {
-            // Never operate on a key that was not saved.
+            // The Keychain could not be read or would not keep a key. Never
+            // operate on a key that is not safely stored.
             keypair = Keypair()
             phase = .storageFailed
         }
-        client = ValpixClient(rpc: SolanaRPC(url: AppConfig.rpcURL), program: ValpixProgram(programId: AppConfig.programId))
+        client = ValpixClient(rpc: SolanaRPC(transport: AppConfig.transport), program: ValpixProgram(programId: AppConfig.programId))
         name = defaults.string(forKey: "name") ?? ""
         names = defaults.dictionary(forKey: "names") as? [String: String] ?? [:]
         // Start from what this phone last knew, so a member who opens the app
@@ -67,6 +74,27 @@ final class AppModel {
         return text
     }
 
+    // MARK: Lock
+
+    func unlockApp() async {
+        guard locked else { return }
+        if await Authenticator.confirm(reason: "Abrir valpix") { locked = false }
+    }
+
+    func lock() {
+        locked = true
+        flow = nil
+    }
+
+    /// The person's own access point, tried before the built-in ones.
+    var accessPoint: String {
+        get { defaults.string(forKey: "accessPoint") ?? "" }
+        set {
+            defaults.set(newValue.trimmingCharacters(in: .whitespacesAndNewlines), forKey: "accessPoint")
+            client = ValpixClient(rpc: SolanaRPC(transport: AppConfig.transport), program: ValpixProgram(programId: AppConfig.programId))
+        }
+    }
+
     // MARK: Keeping up with the chain
 
     func start() {
@@ -87,6 +115,7 @@ final class AppModel {
             defaults.set(fresh.snapshot, forKey: "state")
             hasRoute = true
             phase = fresh.member == nil ? .needsJoin : .ready
+            chainConfirmedNoAccount = fresh.member == nil
             #if DEBUG
             openDebugLinkOnce()
             #endif
@@ -154,10 +183,10 @@ final class AppModel {
 
     /// Waits for a payment to arrive after `start` (chain time). Used while a
     /// QR is on screen.
-    func nextIncomingPayment(after start: TimeInterval) async -> HistoryEntry? {
+    func nextIncomingPayment(requestedPesos: UInt64?, after start: TimeInterval) async -> HistoryEntry? {
         while !Task.isCancelled {
-            if let entries = try? await client.history(for: publicKey, limit: 3),
-               let hit = entries.first(where: { $0.kind == .received && TimeInterval($0.ts) >= start - 2 }) {
+            if let entries = try? await client.history(for: publicKey, limit: 5),
+               let hit = entries.first(where: { $0.settles(requestedPesos: requestedPesos, after: start) }) {
                 return hit
             }
             try? await Task.sleep(for: .milliseconds(1_500))
@@ -169,48 +198,45 @@ final class AppModel {
 
     // MARK: Links (scanned QR codes and opened valpix: links)
 
-    /// Returns false when the text is not a valpix link.
+    /// Handles a scanned code or an opened link. Returns false when it is
+    /// not a valpix link or there is nothing to do with it.
     @discardableResult
-    func open(text: String) -> Bool {
-        guard let link = ValpixLink(text) else { return false }
-        open(link)
+    func open(text: String, from source: LinkSource) -> Bool {
+        guard !locked, phase != .storageFailed, let link = ValpixLink(text) else { return false }
+        let situation = WalletSituation(
+            own: publicKey, isMember: phase == .ready, chainConfirmedNoAccount: chainConfirmedNoAccount
+        )
+        switch LinkPolicy.action(for: link, from: source, situation: situation) {
+        case .pay(let to, let amount, let name): flow = .confirm(to: to, amountPesos: amount, name: name)
+        case .invite(let key, let name): flow = .invite(key: key, name: name)
+        case .adopt(let seed): flow = .adopt(seed: seed)
+        case .unlock(let blob): flow = .unlock(blob: blob)
+        case .ignore: return false
+        }
         return true
     }
 
-    func open(_ link: ValpixLink) {
-        switch link {
-        case .pay(let to, let amount, let name):
-            guard phase == .ready, to != publicKey else { return }
-            flow = .confirm(to: to, amountPesos: amount, name: name)
-        case .join(let key, let name):
-            guard phase == .ready, key != publicKey else { return }
-            flow = .invite(key: key, name: name)
-        case .wallet(let seed):
-            adopt(seed: seed)
-        case .backup(let blob):
-            guard phase != .ready else { return }
-            flow = .unlock(blob: blob)
-        }
-    }
-
-    /// Replaces this phone's wallet with a scanned one. Allowed only while
-    /// this phone has no account, so a QR can never overwrite a funded wallet.
-    func adopt(seed: Data) {
-        guard phase != .ready, phase != .storageFailed,
-              let imported = Keypair(seed: seed), KeyStore.save(imported)
-        else { return }
+    /// Replaces this phone's wallet with a scanned one, after the person
+    /// approves. `LinkPolicy` only offers this while the chain says this
+    /// phone has no account, so it can never overwrite a funded wallet.
+    func adopt(seed: Data) async -> Bool {
+        guard phase == .needsJoin, chainConfirmedNoAccount,
+              await Authenticator.confirm(reason: "Usar esta billetera en este teléfono"),
+              let imported = WalletKeeper.replace(with: seed, in: store)
+        else { return false }
         keypair = imported
         defaults.removeObject(forKey: "state")
         state = nil
+        chainConfirmedNoAccount = false
         phase = .loading
         flow = nil
-        Task { await refresh() }
+        await refresh()
+        return true
     }
 
-    func unlock(blob: Data, password: String) -> Bool {
+    func unlock(blob: Data, password: String) async -> Bool {
         guard let seed = WalletBackup.open(blob, password: password) else { return false }
-        adopt(seed: seed)
-        return true
+        return await adopt(seed: seed)
     }
 
     /// The secret QR contents. Callers must authenticate first.
@@ -239,7 +265,7 @@ final class AppModel {
     /// treated as a scanned code once the app is ready. A script cannot tap
     /// through the system's "Open in valpix?" prompt, so this stands in for it.
     private func openDebugLinkOnce() {
-        guard !debugLinkOpened, phase == .ready,
+        guard !debugLinkOpened, !locked, phase != .loading,
               let text = ProcessInfo.processInfo.environment["VALPIX_OPEN"]
         else { return }
         debugLinkOpened = true
@@ -247,7 +273,7 @@ final class AppModel {
         case "history": flow = .history
         case "charge": flow = .charge
         case "wallet": flow = .wallet
-        default: open(text: text)
+        default: open(text: text, from: .scanned)
         }
     }
 
