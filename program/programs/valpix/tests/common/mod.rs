@@ -246,6 +246,49 @@ impl Env {
             },
         )
     }
+    pub fn ix_fund_pool(&self, funder: &Pubkey, lamports: u64, min_clpc_out: u64) -> Instruction {
+        self.ix(
+            valpix::instruction::FundPool { lamports, min_clpc_out }.data(),
+            valpix::accounts::FundPool {
+                funder: *funder,
+                funder_member: self.member_pda(funder),
+                config: self.config_pda(),
+                pool: self.pool_pda(),
+                vault: self.vault_pda(),
+                system_program: system_program::ID,
+            },
+        )
+    }
+    pub fn ix_revive(&self, payer: &Pubkey, target: &Pubkey) -> Instruction {
+        self.ix(
+            valpix::instruction::Revive {}.data(),
+            valpix::accounts::Revive {
+                payer: *payer,
+                payer_member: self.member_pda(payer),
+                target: *target,
+                target_member: self.member_pda(target),
+                config: self.config_pda(),
+                pool: self.pool_pda(),
+                vault: self.vault_pda(),
+                system_program: system_program::ID,
+                instructions: instructions_sysvar(),
+            },
+        )
+    }
+    pub fn ix_revive_self(&self, payer: &Pubkey) -> Instruction {
+        self.ix(
+            valpix::instruction::ReviveSelf {}.data(),
+            valpix::accounts::ReviveSelf {
+                payer: *payer,
+                payer_member: self.member_pda(payer),
+                config: self.config_pda(),
+                pool: self.pool_pda(),
+                vault: self.vault_pda(),
+                system_program: system_program::ID,
+                instructions: instructions_sysvar(),
+            },
+        )
+    }
     /// The current config as update parameters, ready to tweak one field.
     pub fn config_params(&self) -> ConfigParams {
         let c = self.config();

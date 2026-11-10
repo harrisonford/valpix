@@ -42,4 +42,19 @@ pub mod valpix {
     pub fn pay(ctx: Context<Pay>, amount: u64, payer_name: String) -> Result<()> {
         crate::instructions::pay::handle_pay(ctx, amount, payer_name)
     }
+
+    /// Adds SOL to the pool in exchange for CLPC at the current price.
+    pub fn fund_pool(ctx: Context<FundPool>, lamports: u64, min_clpc_out: u64) -> Result<()> {
+        crate::instructions::fund_pool::handle_fund_pool(ctx, lamports, min_clpc_out)
+    }
+
+    /// Tops another member's drained wallet back up to the float.
+    pub fn revive(ctx: Context<Revive>) -> Result<()> {
+        crate::instructions::revive::handle_revive(ctx)
+    }
+
+    /// Tops the caller's own wallet back up to the float.
+    pub fn revive_self(ctx: Context<ReviveSelf>) -> Result<()> {
+        crate::instructions::revive::handle_revive_self(ctx)
+    }
 }

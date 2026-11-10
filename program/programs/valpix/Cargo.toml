@@ -33,6 +33,7 @@ solana-transaction = "4"
 solana-signer = "3"
 solana-keypair = "3"
 base64 = "0.22"
+solana-system-interface = { version = "3", features = ["bincode"] }
 
 
 [lints.rust]

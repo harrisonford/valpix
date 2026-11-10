@@ -21,3 +21,21 @@ pub struct Joined {
     pub cost: u64,
     pub ts: i64,
 }
+
+#[event]
+pub struct Funded {
+    pub funder: Pubkey,
+    pub lamports: u64,
+    /// Micro-CLPC the funder received from the pool.
+    pub clpc_out: u64,
+    pub ts: i64,
+}
+
+#[event]
+pub struct Revived {
+    pub payer: Pubkey,
+    pub target: Pubkey,
+    /// Micro-CLPC the payer gave the pool.
+    pub cost: u64,
+    pub ts: i64,
+}
