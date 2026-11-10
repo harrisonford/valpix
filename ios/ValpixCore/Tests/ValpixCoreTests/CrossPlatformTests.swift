@@ -13,6 +13,8 @@ struct CrossPlatformTests {
     static let wallet = "valpix:wallet?seed=4wBqpZM9xaSheZzJSMawUKKwhdpChKbZ5eu5ky4Vigw"
     /// Sealed by the Swift core.
     static let backupFromSwift = "valpix:backup?d=AQOmdWr_IqZ30ayvAIjUGkUFJhiZFOGeyntPE9MCDRUzXD7XoO9Cc8TNwJ0wpbgQjTIcaTIIAKRPops8eoDZtS-7FplJAhScmyW-sg8"
+    /// Sealed by the Kotlin core.
+    static let backupFromKotlin = "valpix:backup?d=AZXn0GUayAWBM2vmThcVk_ysRHuaq9alOtCvkwZVH2jEo8wW0keO7t1D1lDOC0HhVOnJ0ZLFl1d2irQgPfFFE1pKNkxJPWWJuyplX9M"
     static let password = "contraseña ñandú 1"
 
     let recipient = PublicKey(base58: Vectors.recipient)!
@@ -33,12 +35,14 @@ struct CrossPlatformTests {
         #expect(ValpixLink(Self.wallet) == .wallet(seed: seed))
     }
 
-    @Test func opensABackupSealedBySwift() throws {
-        guard case .backup(let blob)? = ValpixLink(Self.backupFromSwift) else {
-            Issue.record("not a backup link")
-            return
+    @Test func opensBackupsSealedOnEitherPlatform() throws {
+        for link in [Self.backupFromSwift, Self.backupFromKotlin] {
+            guard case .backup(let blob)? = ValpixLink(link) else {
+                Issue.record("not a backup link")
+                continue
+            }
+            #expect(WalletBackup.open(blob, password: Self.password) == seed)
+            #expect(WalletBackup.open(blob, password: "contrasena nandu 1") == nil)
         }
-        #expect(WalletBackup.open(blob, password: Self.password) == seed)
-        #expect(WalletBackup.open(blob, password: "contrasena nandu 1") == nil)
     }
 }

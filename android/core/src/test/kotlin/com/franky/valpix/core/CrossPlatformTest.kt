@@ -19,6 +19,8 @@ class CrossPlatformTest {
     private val wallet = "valpix:wallet?seed=4wBqpZM9xaSheZzJSMawUKKwhdpChKbZ5eu5ky4Vigw"
     /** Sealed by the Swift core. */
     private val backupFromSwift = "valpix:backup?d=AQOmdWr_IqZ30ayvAIjUGkUFJhiZFOGeyntPE9MCDRUzXD7XoO9Cc8TNwJ0wpbgQjTIcaTIIAKRPops8eoDZtS-7FplJAhScmyW-sg8"
+    /** Sealed by the Kotlin core. */
+    private val backupFromKotlin = "valpix:backup?d=AZXn0GUayAWBM2vmThcVk_ysRHuaq9alOtCvkwZVH2jEo8wW0keO7t1D1lDOC0HhVOnJ0ZLFl1d2irQgPfFFE1pKNkxJPWWJuyplX9M"
     private val password = "contraseña ñandú 1"
 
     private val recipient = key(Vectors.recipient)
@@ -39,9 +41,11 @@ class CrossPlatformTest {
         assertEquals(ValpixLink.Wallet(seed), ValpixLink.parse(wallet))
     }
 
-    @Test fun opensABackupSealedBySwift() {
-        val link = assertIs<ValpixLink.Backup>(ValpixLink.parse(backupFromSwift))
-        assertContentEquals(seed, WalletBackup.open(link.blob, password))
-        assertNull(WalletBackup.open(link.blob, "contrasena nandu 1"))
+    @Test fun opensBackupsSealedOnEitherPlatform() {
+        for (text in listOf(backupFromSwift, backupFromKotlin)) {
+            val link = assertIs<ValpixLink.Backup>(ValpixLink.parse(text))
+            assertContentEquals(seed, WalletBackup.open(link.blob, password))
+            assertNull(WalletBackup.open(link.blob, "contrasena nandu 1"))
+        }
     }
 }
