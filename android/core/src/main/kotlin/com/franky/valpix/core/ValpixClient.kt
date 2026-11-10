@@ -196,8 +196,7 @@ class ValpixClient(
         val entries = ArrayList<HistoryEntry>()
         for (info in rpc.signatures(program.member(wallet), limit)) {
             if (info.failed) continue
-            val logs = rpc.transactionLogs(info.signature) ?: continue
-            for (event in ValpixEvent.events(logs, program.programId)) {
+            for (event in events(info.signature) ?: continue) {
                 when (event) {
                     is ValpixEvent.Paid -> when (wallet) {
                         event.recipient -> entries.add(HistoryEntry(info.signature, event.ts, HistoryEntry.Kind.RECEIVED, event.payer, event.name, event.amount))
@@ -211,6 +210,25 @@ class ValpixClient(
             }
         }
         return entries
+    }
+
+    /**
+     * The events of transactions already read. A confirmed transaction does
+     * not change, and a phone waiting to be paid asks about the same few
+     * every second or two: public access points allow far fewer transaction
+     * lookups than that, and refuse them all once the limit is passed.
+     */
+    private val seen = object : LinkedHashMap<String, List<ValpixEvent>>(64, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<ValpixEvent>>?) = size > 200
+    }
+
+    /** A transaction's valpix events, or `null` when the access point does not have it (yet, or any more). */
+    private fun events(signature: String): List<ValpixEvent>? {
+        synchronized(seen) { seen[signature] }?.let { return it }
+        val logs = rpc.transactionLogs(signature) ?: return null
+        val found = ValpixEvent.events(logs, program.programId)
+        synchronized(seen) { seen[signature] = found }
+        return found
     }
 
     companion object {

@@ -73,12 +73,33 @@ public struct HistoryEntry: Equatable, Sendable, Identifiable {
     public var id: String { signature }
 }
 
+/// The events of transactions already read. A confirmed transaction does not
+/// change, and a phone waiting to be paid asks about the same few every
+/// second or two: public access points allow far fewer transaction lookups
+/// than that, and refuse them all once the limit is passed.
+final class EventMemory: @unchecked Sendable {
+    private let lock = NSLock()
+    private var events = [String: [ValpixEvent]]()
+    private var order = [String]()
+
+    func get(_ signature: String) -> [ValpixEvent]? { lock.withLock { events[signature] } }
+
+    func set(_ signature: String, _ found: [ValpixEvent]) {
+        lock.withLock {
+            if events[signature] == nil { order.append(signature) }
+            events[signature] = found
+            if order.count > 200 { events[order.removeFirst()] = nil }
+        }
+    }
+}
+
 /// The valpix program, as a set of things a wallet can do.
 public struct ValpixClient: Sendable {
     public let rpc: SolanaRPC
     public let program: ValpixProgram
     private let pollInterval: Duration
     private let timeout: Duration
+    private let seen = EventMemory()
 
     public init(rpc: SolanaRPC, program: ValpixProgram, pollInterval: Duration = .milliseconds(500), timeout: Duration = .seconds(90)) {
         self.rpc = rpc
@@ -172,6 +193,16 @@ public struct ValpixClient: Sendable {
         return status.isConfirmed ? .confirmed(signature: signature) : nil
     }
 
+    /// A transaction's valpix events, or `nil` when the access point does not
+    /// have it (yet, or any more).
+    private func events(of signature: String) async throws -> [ValpixEvent]? {
+        if let known = seen.get(signature) { return known }
+        guard let logs = try await rpc.transactionLogs(signature) else { return nil }
+        let found = ValpixEvent.events(in: logs, programId: program.programId)
+        seen.set(signature, found)
+        return found
+    }
+
     /// Finds "Error Code: Name." in a program log.
     static func errorName(in logs: [String]) -> String? {
         for line in logs {
@@ -188,8 +219,8 @@ public struct ValpixClient: Sendable {
         let signatures = try await rpc.signatures(for: program.member(of: wallet), limit: limit)
         var entries = [HistoryEntry]()
         for info in signatures where !info.failed {
-            guard let logs = try await rpc.transactionLogs(info.signature) else { continue }
-            for event in ValpixEvent.events(in: logs, programId: program.programId) {
+            guard let events = try await events(of: info.signature) else { continue }
+            for event in events {
                 switch event {
                 case .paid(let paid) where paid.recipient == wallet:
                     entries.append(HistoryEntry(signature: info.signature, ts: paid.ts, kind: .received, counterparty: paid.payer, name: paid.name, amountMicro: paid.amount))

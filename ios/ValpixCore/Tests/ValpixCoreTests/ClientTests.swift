@@ -43,6 +43,7 @@ private final class Counter: @unchecked Sendable {
     private let lock = NSLock()
     private var value = 0
     func next() -> Int { lock.withLock { value += 1; return value } }
+    func peek() -> Int { lock.withLock { value } }
 }
 
 private var confirmedStatus: [String: Any] { ["context": ["slot": 101], "value": [["confirmationStatus": "confirmed", "err": NSNull()]]] }
@@ -213,6 +214,41 @@ private func sentSignature(_ fake: FakeTransport) -> String {
         #expect(sent.first?.counterparty == payee)
         // Failed transactions are not shown, so only one lookup was made each time.
         #expect(fake.calls.filter { $0.method == "getTransaction" }.count == 2)
+    }
+
+    @Test func watchingForAPaymentDoesNotReadTheSameTransactionTwice() async throws {
+        // A seller's phone asks again every second or two while a code is on
+        // screen. Public access points allow few transaction lookups, so each
+        // transaction is read once and remembered.
+        let fake = chain()
+        let payee = PublicKey(base58: Vectors.paidRecipient)!
+        let arrived = Counter()
+        let invoke = "Program \(Vectors.programId) invoke [1]"
+        let success = "Program \(Vectors.programId) success"
+        fake.on("getSignaturesForAddress") { _ in
+            let old: [Any] = [["signature": "old2", "blockTime": 2, "err": NSNull()],
+                              ["signature": "old1", "blockTime": 1, "err": NSNull()]]
+            return arrived.peek() > 0 ? [["signature": "new", "blockTime": 3, "err": NSNull()]] + old : old
+        }
+        fake.on("getTransaction") { params in
+            switch params[0] as? String {
+            case "new": return ["meta": ["logMessages": [invoke, Vectors.paidLogLine, success]]]
+            case "old1": return nil // not available yet: must be asked for again
+            default: return ["meta": ["logMessages": [invoke, success]]]
+            }
+        }
+        func lookups(_ signature: String) -> Int {
+            fake.calls.filter { $0.method == "getTransaction" && $0.params[0] as? String == signature }.count
+        }
+        let watching = client(fake)
+        for _ in 0..<4 { #expect(try await watching.history(for: payee, limit: 5).isEmpty) }
+        #expect(lookups("old2") == 1)
+        #expect(lookups("old1") == 4)
+
+        _ = arrived.next()
+        for _ in 0..<3 { #expect(try await watching.history(for: payee, limit: 5).map(\.signature) == ["new"]) }
+        #expect(lookups("new") == 1)
+        #expect(lookups("old2") == 1)
     }
 }
 

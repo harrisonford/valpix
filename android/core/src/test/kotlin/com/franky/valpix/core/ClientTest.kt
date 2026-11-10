@@ -218,6 +218,34 @@ class ClientTest {
         assertEquals(HistoryEntry("s2", Vectors.paidTs, HistoryEntry.Kind.SENT, me, "", Vectors.paidAmount), theirs)
     }
 
+    @Test fun watchingForAPaymentDoesNotReadTheSameTransactionTwice() {
+        // A seller's phone asks again every second or two while a code is on
+        // screen. Public access points allow few transaction lookups, so each
+        // transaction is read once and remembered.
+        val pid = Vectors.programId
+        val me = key(Vectors.paidRecipient)
+        var signatures = """[{"signature":"old2","blockTime":2,"err":null},{"signature":"old1","blockTime":1,"err":null}]"""
+        fake.on("getSignaturesForAddress") { signatures }
+        fake.on("getTransaction") { params ->
+            when (params[0].jsonPrimitive.content) {
+                "new" -> """{"meta":{"logMessages":[${q("Program $pid invoke [1]")},${q(Vectors.paidLogLine)},${q("Program $pid success")}]}}"""
+                "old1" -> "null" // not available yet: must be asked for again
+                else -> """{"meta":{"logMessages":[${q("Program $pid invoke [1]")},${q("Program $pid success")}]}}"""
+            }
+        }
+        repeat(4) { assertEquals(emptyList(), client.history(me, 5)) }
+        assertEquals(1, fake.calls.count { it.first == "getTransaction" && it.second[0].jsonPrimitive.content == "old2" })
+        assertEquals(4, fake.calls.count { it.first == "getTransaction" && it.second[0].jsonPrimitive.content == "old1" })
+
+        signatures = """[{"signature":"new","blockTime":3,"err":null},{"signature":"old2","blockTime":2,"err":null},{"signature":"old1","blockTime":1,"err":null}]"""
+        repeat(3) { assertEquals(listOf("new"), client.history(me, 5).map { it.signature }) }
+        assertEquals(1, fake.calls.count { it.first == "getTransaction" && it.second[0].jsonPrimitive.content == "new" })
+        assertEquals(1, fake.calls.count { it.first == "getTransaction" && it.second[0].jsonPrimitive.content == "old2" })
+        // The same transaction, seen from the payer's side, is still read from memory.
+        assertEquals(HistoryEntry.Kind.SENT, client.history(key(Vectors.paidPayer), 5).single().kind)
+        assertEquals(1, fake.calls.count { it.first == "getTransaction" && it.second[0].jsonPrimitive.content == "new" })
+    }
+
     private fun sampleState(member: Boolean = true): WalletState {
         stateHandlers(if (member) account(2_000_000uL, Vectors.memberData) else null)
         return client.state(wallet, observedAtMillis = 50_000_000L)
