@@ -21,6 +21,13 @@ pub fn quote(config: &Config, pool: &Pool, sol_reserve: u64, lamports_out: u64) 
     math::quote_clpc_in(sol_reserve, pool.clpc_reserve, lamports_out)
 }
 
+/// The CLPC fee for refunding one payment, or `None` when the pool cannot
+/// or should not refund it: it would fall below its floor, or its price has
+/// climbed past the cap. The payment then costs no CLPC and gets no refund.
+pub fn fee_quote(config: &Config, pool: &Pool, sol_reserve: u64) -> Option<u64> {
+    quote(config, pool, sol_reserve, config.fee_refund_lamports).filter(|fee| *fee <= config.max_fee)
+}
+
 /// Moves SOL from the vault to `to`.
 pub fn pay_out<'info>(
     vault: &AccountInfo<'info>,

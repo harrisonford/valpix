@@ -15,4 +15,6 @@ pub const MEMBER_SEED: &[u8] = b"member";
 pub const DEFAULT_DAILY_RATE: u64 = 1000 * UNIT;
 /// Solana's base fee for one signature.
 pub const DEFAULT_FEE_REFUND_LAMPORTS: u64 = 5_000;
+/// 2% of a day's income.
+pub const DEFAULT_MAX_FEE: u64 = 20 * UNIT;
 pub const DEFAULT_REVIVE_PERIOD_SECS: i64 = 30 * 86_400;

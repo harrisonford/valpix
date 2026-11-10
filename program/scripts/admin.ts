@@ -78,6 +78,11 @@ const toMicro = (clpc: string) => {
 const fmtClpc = (micro: bigint) =>
   `${micro / UNIT}.${(micro % UNIT).toString().padStart(6, "0")} CLPC`;
 const fmtSol = (lamports: bigint | number) => `${Number(lamports) / LAMPORTS_PER_SOL} SOL`;
+const requireOpt = (name: "sol" | "clpc" | "to" | "amount"): string => {
+  const value = opt[name];
+  if (!value) throw new Error(`--${name} is required`);
+  return value;
+};
 const lamportsArg = (sol: string | undefined) => {
   if (!sol) throw new Error("--sol is required");
   return Math.round(Number(sol) * LAMPORTS_PER_SOL);
@@ -101,14 +106,20 @@ async function show(wallet?: string) {
   const rentMin = BigInt(await connection.getMinimumBalanceForRentExemption(0));
   const solReserve = BigInt(await connection.getBalance(vault)) - rentMin;
   const clpcReserve = BigInt(p.clpcReserve.toString());
-  const fee = quoteIn(solReserve, clpcReserve, BigInt(cfg.feeRefundLamports.toString()));
+  // Mirrors the program: no fee below the floor or above the cap.
+  const refund = BigInt(cfg.feeRefundLamports.toString());
+  const price = quoteIn(solReserve, clpcReserve, refund);
+  const maxFee = BigInt(cfg.maxFee.toString());
+  const aboveFloor = solReserve >= refund && solReserve - refund >= BigInt(cfg.poolFloorLamports.toString());
+  const fee = price !== null && aboveFloor && price <= maxFee ? price : null;
 
   console.log(`program   ${programId.toBase58()}`);
   console.log(`cluster   ${opt.url}`);
   console.log(`admin     ${cfg.admin.toBase58()}`);
   console.log(`vault     ${vault.toBase58()}`);
   console.log(`pool      ${fmtSol(solReserve)}  x  ${fmtClpc(clpcReserve)}`);
-  console.log(`fee now   ${fee === null ? "pool too low: payments go through unrefunded" : fmtClpc(fee)}`);
+  console.log(`fee now   ${fee === null ? "none: the pool is too low or too dear, payments go through unrefunded" : fmtClpc(fee)}`);
+  console.log(`fee cap   ${fmtClpc(maxFee)}`);
   console.log(`income    ${fmtClpc(BigInt(cfg.dailyRate.toString()))} per day`);
   console.log(`float     ${cfg.floatLamports} lamports (revive below ${cfg.reviveThresholdLamports})`);
   console.log(`surcharge ${fmtClpc(BigInt(cfg.joinSurcharge.toString()))} per join`);
@@ -136,7 +147,7 @@ async function main() {
         reviveThresholdLamports: new BN(rentMin + Number(opt["revive-fees"]) * BASE_FEE),
         poolFloorLamports: new BN(Math.round(Number(opt["floor-sol"]) * LAMPORTS_PER_SOL)),
         initialSolLamports: new BN(lamportsArg(opt.sol)),
-        initialClpcReserve: new BN(toMicro(opt.clpc ?? "0").toString()),
+        initialClpcReserve: new BN(toMicro(requireOpt("clpc")).toString()),
       };
       const sig = await program.methods
         .initialize(params)

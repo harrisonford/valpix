@@ -1012,6 +1012,11 @@
     },
     {
       "code": 6013,
+      "name": "EmptyPool",
+      "msg": "The pool must start with both SOL and CLPC"
+    },
+    {
+      "code": 6014,
       "name": "Overflow",
       "msg": "Arithmetic overflow"
     }
@@ -1083,6 +1088,15 @@
             "type": "u64"
           },
           {
+            "name": "max_fee",
+            "docs": [
+              "The most micro-CLPC a payment may be charged. When the pool's price",
+              "for a refund is higher, the payment goes through without fee or",
+              "refund, so a draining pool never prices people out of paying."
+            ],
+            "type": "u64"
+          },
+          {
             "name": "bump",
             "type": "u8"
           },
@@ -1127,6 +1141,10 @@
           },
           {
             "name": "pool_floor_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "max_fee",
             "type": "u64"
           }
         ]

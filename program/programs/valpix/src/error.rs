@@ -28,6 +28,8 @@ pub enum ValpixError {
     ReviveTooSoon,
     #[msg("The pool does not hold enough SOL for this")]
     PoolTooLow,
+    #[msg("The pool must start with both SOL and CLPC")]
+    EmptyPool,
     #[msg("Arithmetic overflow")]
     Overflow,
 }

@@ -23,6 +23,10 @@ pub struct Config {
     pub revive_period_secs: i64,
     /// The pool stops paying out once its SOL would fall below this.
     pub pool_floor_lamports: u64,
+    /// The most micro-CLPC a payment may be charged. When the pool's price
+    /// for a refund is higher, the payment goes through without fee or
+    /// refund, so a draining pool never prices people out of paying.
+    pub max_fee: u64,
     pub bump: u8,
     pub vault_bump: u8,
 }

@@ -26,9 +26,15 @@ gives nothing back.
 Income is 1000 CLPC a day per member, worked out from the chain's clock and
 written only when that member spends. CLPC has 6 decimal places.
 
-`pay`, `join` and `revive` must be the only valpix instruction in their
-transaction and cannot be called from another program, so one Solana fee
-never collects more than one refund.
+`pay`, `join` and `revive` must stand alone: the only other instructions
+allowed in the same transaction are compute-budget ones, and they cannot be
+called from another program. This keeps one Solana fee from collecting more
+than one refund.
+
+A payment's fee is capped (`max_fee`, 20 CLPC to start). When the pool is
+below its floor, or its price for a refund is above the cap, the payment
+still goes through: it costs no CLPC and the payer's own wallet covers the
+Solana fee.
 
 ## Requirements
 
@@ -41,7 +47,7 @@ never collects more than one refund.
 
 ```sh
 anchor build          # program + idl
-cargo test -p valpix  # 52 tests, in-process, no validator needed
+cargo test -p valpix  # 55 tests, in-process, no validator needed
 ```
 
 After changing the program's interface, copy the new interface file so the

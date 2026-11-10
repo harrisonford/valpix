@@ -15,12 +15,28 @@ fn initialize_sets_defaults() {
     assert_eq!(config.daily_rate, 1000 * UNIT);
     assert_eq!(config.fee_refund_lamports, 5_000);
     assert_eq!(config.join_surcharge, 0);
+    assert_eq!(config.max_fee, 20 * UNIT);
     assert_eq!(config.revive_period_secs, 30 * DAY);
     assert_eq!(config.float_lamports, FLOAT);
     assert_eq!(config.revive_threshold_lamports, REVIVE_THRESHOLD);
     assert_eq!(config.pool_floor_lamports, POOL_FLOOR);
     assert_eq!(env.pool().clpc_reserve, 200_000 * UNIT);
     assert_eq!(env.sol_reserve(), SOL);
+}
+
+#[test]
+fn initialize_rejects_an_empty_pool() {
+    // With either reserve at zero the price is zero or undefined, and no
+    // instruction can repair a pool once it exists.
+    for (sol, clpc) in [(0, 200_000 * UNIT), (SOL, 0)] {
+        let mut env = Env::bare();
+        let mut params = default_init();
+        params.initial_sol_lamports = sol;
+        params.initial_clpc_reserve = clpc;
+        let ix = env.ix_initialize(params);
+        let admin = env.admin.insecure_clone();
+        expect_err(env.send(&[ix], &[&admin]), "EmptyPool");
+    }
 }
 
 #[test]

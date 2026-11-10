@@ -300,6 +300,7 @@ impl Env {
             revive_threshold_lamports: c.revive_threshold_lamports,
             revive_period_secs: c.revive_period_secs,
             pool_floor_lamports: c.pool_floor_lamports,
+            max_fee: c.max_fee,
         }
     }
 }

@@ -68,6 +68,44 @@ fn pay_without_refund_when_pool_is_low() {
 }
 
 #[test]
+fn pay_goes_unrefunded_when_the_pool_price_exceeds_the_fee_cap() {
+    let (mut env, a, b) = two_members();
+    // Far above the floor, but drained enough that the constant-product
+    // price of one refund is about 995 CLPC: more than anyone should be
+    // charged, and more than this payer could pay on top of 300.
+    let vault = env.vault_pda();
+    let rent_min = env.rent_min(0);
+    env.set_lamports(&vault, rent_min + 1_010_000);
+    assert!(env.price_of(FEE) > env.config().max_fee);
+    let reserve_before = env.pool().clpc_reserve;
+
+    let ix = env.ix_pay(&a.pubkey(), &b.pubkey(), 300 * UNIT, "Camila");
+    env.send(&[ix], &[&a]).unwrap();
+
+    assert_eq!(env.balance(&a.pubkey()), 700 * UNIT);
+    assert_eq!(env.balance(&b.pubkey()), 1300 * UNIT);
+    assert_eq!(env.pool().clpc_reserve, reserve_before);
+    assert_eq!(env.sol_reserve(), 1_010_000);
+    assert_eq!(env.lamports(&a.pubkey()), FLOAT - FEE);
+}
+
+#[test]
+fn a_fee_at_the_cap_is_still_charged() {
+    let (mut env, a, b) = two_members();
+    let fee = env.price_of(FEE);
+    let mut params = env.config_params();
+    params.max_fee = fee;
+    let ix = env.ix_update_config(&env.admin.pubkey(), params);
+    let admin = env.admin.insecure_clone();
+    env.send(&[ix], &[&admin]).unwrap();
+
+    let ix = env.ix_pay(&a.pubkey(), &b.pubkey(), 300 * UNIT, "");
+    env.send(&[ix], &[&a]).unwrap();
+    assert_eq!(env.balance(&a.pubkey()), 700 * UNIT - fee);
+    assert_eq!(env.lamports(&a.pubkey()), FLOAT);
+}
+
+#[test]
 fn can_spend_the_whole_balance_when_no_fee_is_charged() {
     let (mut env, a, b) = two_members();
     env.drain_pool_to_floor();

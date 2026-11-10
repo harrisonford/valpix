@@ -38,10 +38,11 @@ pub fn handle_pay(ctx: Context<Pay>, amount: u64, payer_name: String) -> Result<
     payer_member.settle(config.daily_rate, now)?;
 
     // The fee buys back this transaction's base fee from the pool. When the
-    // pool cannot afford it, the payment goes through without fee or refund.
+    // pool cannot afford it, or asks more than the cap, the payment goes
+    // through without fee or refund.
     let refund = config.fee_refund_lamports;
     let reserve = vault::sol_reserve(&ctx.accounts.vault)?;
-    let fee = vault::quote(config, &ctx.accounts.pool, reserve, refund);
+    let fee = vault::fee_quote(config, &ctx.accounts.pool, reserve);
 
     let total = amount
         .checked_add(fee.unwrap_or(0))

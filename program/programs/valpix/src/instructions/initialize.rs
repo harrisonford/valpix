@@ -23,6 +23,7 @@ pub struct ConfigParams {
     pub revive_threshold_lamports: u64,
     pub revive_period_secs: i64,
     pub pool_floor_lamports: u64,
+    pub max_fee: u64,
 }
 
 #[derive(Accounts)]
@@ -41,6 +42,13 @@ pub struct Initialize<'info> {
 }
 
 pub fn handle_initialize(ctx: Context<Initialize>, params: InitParams) -> Result<()> {
+    // The ratio of the two reserves is the price. With either at zero the
+    // price is zero or undefined, and nothing can repair a pool afterwards.
+    require!(
+        params.initial_sol_lamports > 0 && params.initial_clpc_reserve > 0,
+        ValpixError::EmptyPool
+    );
+
     let config = &mut ctx.accounts.config;
     config.admin = ctx.accounts.admin.key();
     config.daily_rate = DEFAULT_DAILY_RATE;
@@ -50,6 +58,7 @@ pub fn handle_initialize(ctx: Context<Initialize>, params: InitParams) -> Result
     config.revive_threshold_lamports = params.revive_threshold_lamports;
     config.revive_period_secs = DEFAULT_REVIVE_PERIOD_SECS;
     config.pool_floor_lamports = params.pool_floor_lamports;
+    config.max_fee = DEFAULT_MAX_FEE;
     config.bump = ctx.bumps.config;
     config.vault_bump = ctx.bumps.vault;
 
@@ -91,5 +100,6 @@ pub fn handle_update_config(ctx: Context<UpdateConfig>, params: ConfigParams) ->
     config.revive_threshold_lamports = params.revive_threshold_lamports;
     config.revive_period_secs = params.revive_period_secs;
     config.pool_floor_lamports = params.pool_floor_lamports;
+    config.max_fee = params.max_fee;
     Ok(())
 }
