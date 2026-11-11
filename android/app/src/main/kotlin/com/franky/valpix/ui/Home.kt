@@ -27,11 +27,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.franky.valpix.Amount
 import com.franky.valpix.AppModel
 import com.franky.valpix.GlassButton
 import com.franky.valpix.Theme
@@ -74,10 +73,7 @@ fun BalanceText(model: AppModel, size: TextUnit) {
         while (true) withFrameMillis { now = System.currentTimeMillis() }
     }
     val parts = PesoFormat.parts(model.balance(now))
-    Row(Modifier.padding(horizontal = 24.dp).clearAndSetSemantics { contentDescription = "${parts.whole} pesos" }) {
-        BasicText(parts.whole, Modifier.alignByBaseline(), style = Theme.number(size), maxLines = 1, softWrap = false)
-        BasicText("," + parts.decimals, Modifier.alignByBaseline(), style = Theme.number(size * 0.46f, Theme.dim), maxLines = 1, softWrap = false)
-    }
+    Amount(parts.whole, size, spoken = "${parts.whole} pesos", modifier = Modifier.padding(horizontal = 24.dp), decimals = parts.decimals)
 }
 
 @Composable

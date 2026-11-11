@@ -91,8 +91,8 @@ struct NameField: View {
     var body: some View {
         @Bindable var model = model
         TextField("", text: $model.name, prompt: Text("tu nombre aquí").foregroundStyle(Theme.dim))
-            .font(Theme.caption)
-            .foregroundStyle(Theme.soft)
+            .font(Theme.name)
+            .foregroundStyle(Theme.foreground)
             .multilineTextAlignment(.center)
             .textInputAutocapitalization(.words)
             .autocorrectionDisabled()

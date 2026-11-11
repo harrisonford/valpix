@@ -11,10 +11,55 @@ enum Theme {
     static let soft = Color(white: 0.70)
     static let hairline = Color(white: 0.11)
 
+    /// Gray that still has to be read: the balance's decimals.
+    static let faint = Color(white: 0.56)
+
+    /// Figures that do not jiggle as they change, heavy enough to read at
+    /// arm's length.
     static func number(_ size: CGFloat) -> Font {
-        .system(size: size, weight: .thin).monospacedDigit()
+        .system(size: size, weight: .regular).monospacedDigit()
     }
     static let caption = Font.system(size: 15, weight: .regular)
+    /// The person's own name, at the top of the main screens.
+    static let name = Font.system(size: 20, weight: .medium)
+}
+
+/// A sum of money: the figure and, under it, the currency, so a bare number
+/// is never mistaken for anything else (Kris, 2026-11-11).
+struct Amount: View {
+    let whole: String
+    var size: CGFloat
+    var color: Color = Theme.foreground
+    /// The balance's four decimals, smaller and gray.
+    var decimals: String? = nil
+    var struck = false
+    /// Read aloud in place of the figures.
+    let spoken: String
+
+    var body: some View {
+        let unit = max(13, size * 0.26)
+        VStack(spacing: 2) {
+            HStack(alignment: .firstTextBaseline, spacing: 0) {
+                Text(whole)
+                    .font(Theme.number(size))
+                    .foregroundStyle(color)
+                    .strikethrough(struck, color: color)
+                if let decimals {
+                    Text("," + decimals)
+                        .font(Theme.number(size * 0.46))
+                        .foregroundStyle(Theme.faint)
+                }
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.5)
+            Text("CLP")
+                .font(.system(size: unit, weight: .medium))
+                .kerning(unit * 0.14)
+                .foregroundStyle(Theme.soft)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(spoken)
+    }
 }
 
 /// A round glass control carrying one icon and no label.

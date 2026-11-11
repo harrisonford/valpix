@@ -16,10 +16,7 @@ struct ConfirmView: View {
     var body: some View {
         VStack(spacing: 0) {
             Spacer()
-            Text(PesoFormat.whole(amount))
-                .font(Theme.number(60))
-                .foregroundStyle(model.canPay(amount) ? Theme.foreground : Theme.dim)
-                .accessibilityLabel("\(amount) pesos")
+            Amount(whole: PesoFormat.whole(amount), size: 60, color: model.canPay(amount) ? Theme.foreground : Theme.dim, spoken: "\(amount) pesos")
             Text(model.displayName(for: recipient, fallback: name))
                 .font(Theme.caption)
                 .foregroundStyle(Theme.soft)
@@ -67,9 +64,7 @@ struct InviteView: View {
                 .foregroundStyle(Theme.soft)
                 .padding(.top, 18)
             if let cost = model.inviteCostPesos {
-                Text(PesoFormat.signed(cost, incoming: false))
-                    .font(Theme.number(30))
-                    .foregroundStyle(Theme.dim)
+                Amount(whole: PesoFormat.signed(cost, incoming: false), size: 30, color: Theme.soft, spoken: "Cuesta \(cost) pesos")
                     .padding(.top, 14)
             }
             Spacer()
@@ -104,7 +99,7 @@ struct SendingView: View {
                 .animation(.easeOut(duration: 1.5).repeatForever(autoreverses: false), value: pulsing)
                 .background(Circle().strokeBorder(Theme.dim, lineWidth: 1).frame(width: 84, height: 84))
             if amountPesos > 0 {
-                Text(PesoFormat.whole(amountPesos)).font(Theme.number(44)).foregroundStyle(Theme.dim)
+                Amount(whole: PesoFormat.whole(amountPesos), size: 44, color: Theme.dim, spoken: "\(amountPesos) pesos")
             }
         }
         .onAppear { pulsing = true }
@@ -128,9 +123,7 @@ struct DoneView: View {
                 .frame(width: 84, height: 84)
                 .background(Theme.foreground, in: Circle())
             if let amountPesos {
-                Text(PesoFormat.signed(amountPesos, incoming: incoming))
-                    .font(Theme.number(44))
-                    .foregroundStyle(Theme.foreground)
+                Amount(whole: PesoFormat.signed(amountPesos, incoming: incoming), size: 44, spoken: "\(amountPesos) pesos")
             }
             if !name.isEmpty {
                 Text(name).font(Theme.caption).foregroundStyle(Theme.soft)
@@ -180,10 +173,7 @@ struct FailedView: View {
                 .frame(width: 84, height: 84)
                 .overlay(Circle().strokeBorder(Theme.dim, lineWidth: 1))
             if let amountPesos, amountPesos > 0 {
-                Text(PesoFormat.whole(amountPesos))
-                    .font(Theme.number(44))
-                    .foregroundStyle(Theme.dim)
-                    .strikethrough(certainlyNotPaid, color: Theme.dim)
+                Amount(whole: PesoFormat.whole(amountPesos), size: 44, color: Theme.dim, struck: certainlyNotPaid, spoken: "\(amountPesos) pesos")
             }
         }
         .sensoryFeedback(.error, trigger: true)

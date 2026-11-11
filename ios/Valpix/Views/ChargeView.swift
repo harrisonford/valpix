@@ -11,11 +11,12 @@ struct ChargeView: View {
     var body: some View {
         if showingCode {
             VStack(spacing: 30) {
-                QRImage(text: ValpixLink.pay(to: model.publicKey, amountPesos: amount > 0 ? amount : nil, name: model.sharedName).string)
+                // Tap the code to copy it, to be paid by someone who is not here to scan it.
+                QRImage(text: ValpixLink.pay(to: model.publicKey, amountPesos: amount > 0 ? amount : nil, name: model.sharedName).string, copyable: true)
                     .frame(width: 264, height: 264)
                     .accessibilityLabel("Código para cobrar")
                 if amount > 0 {
-                    Text(PesoFormat.whole(amount)).font(Theme.number(44)).foregroundStyle(Theme.foreground)
+                    Amount(whole: PesoFormat.whole(amount), size: 44, spoken: "\(amount) pesos")
                 }
             }
             .task {
@@ -33,10 +34,7 @@ struct ChargeView: View {
         } else {
             VStack(spacing: 0) {
                 Spacer()
-                Text(PesoFormat.whole(amount))
-                    .font(Theme.number(60))
-                    .foregroundStyle(amount > 0 ? Theme.foreground : Theme.dim)
-                    .accessibilityLabel("\(amount) pesos")
+                Amount(whole: PesoFormat.whole(amount), size: 60, color: amount > 0 ? Theme.foreground : Theme.dim, spoken: "\(amount) pesos")
                 Spacer()
                 Keypad(value: $amount)
                 // With no amount typed, this shows an open code a stall can print.

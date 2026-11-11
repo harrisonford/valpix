@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
@@ -23,13 +24,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 
 /**
@@ -49,11 +53,20 @@ object Theme {
     private val glassFill = Color.White.copy(alpha = 0.10f)
     private val glassEdge = Color.White.copy(alpha = 0.22f)
 
-    /** Thin figures that do not jiggle as they change. */
-    fun number(size: TextUnit, color: Color = foreground) =
-        TextStyle(color = color, fontSize = size, fontWeight = FontWeight.Thin, fontFeatureSettings = "tnum")
+    /** Gray that still has to be read: the balance's decimals. */
+    val faint = Color(0xFF8E8E8E)
+
+    /** Figures that do not jiggle as they change, heavy enough to read at arm's length. */
+    fun number(size: TextUnit, color: Color = foreground, weight: FontWeight = FontWeight.Normal) =
+        TextStyle(color = color, fontSize = size, fontWeight = weight, fontFeatureSettings = "tnum")
 
     fun caption(color: Color = soft) = TextStyle(color = color, fontSize = 15.sp)
+
+    /** The person's own name, at the top of the main screens. */
+    fun name(color: Color = foreground) = TextStyle(color = color, fontSize = 20.sp, fontWeight = FontWeight.Medium)
+
+    /** The currency under a figure. */
+    fun unit(size: TextUnit) = TextStyle(color = soft, fontSize = size, fontWeight = FontWeight.Medium, letterSpacing = 0.14.em)
 
     /** A translucent circle with a bright rim: glass, on true black. */
     fun Modifier.glassCircle(): Modifier = clip(CircleShape).background(glassFill).border(1.dp, glassEdge, CircleShape)
@@ -80,6 +93,39 @@ fun GlassButton(
         contentAlignment = Alignment.Center,
     ) {
         Image(icon, contentDescription = null, Modifier.size(size * 0.38f), colorFilter = ColorFilter.tint(Theme.foreground))
+    }
+}
+
+/**
+ * A sum of money: the figure and, under it, the currency, so a bare number
+ * is never mistaken for anything else (Kris, 2026-11-11).
+ */
+@Composable
+fun Amount(
+    whole: String,
+    size: TextUnit,
+    /** Read aloud in place of the figures. */
+    spoken: String,
+    modifier: Modifier = Modifier,
+    color: Color = Theme.foreground,
+    /** The balance's four decimals, smaller and gray. */
+    decimals: String? = null,
+    struck: Boolean = false,
+) {
+    Column(modifier.clearAndSetSemantics { contentDescription = spoken }, horizontalAlignment = Alignment.CenterHorizontally) {
+        Row {
+            BasicText(
+                whole, Modifier.alignByBaseline(), maxLines = 1, softWrap = false,
+                style = Theme.number(size, color).copy(textDecoration = if (struck) TextDecoration.LineThrough else null),
+            )
+            if (decimals != null) {
+                BasicText(
+                    ",$decimals", Modifier.alignByBaseline(), maxLines = 1, softWrap = false,
+                    style = Theme.number(size * 0.46f, Theme.faint),
+                )
+            }
+        }
+        BasicText("CLP", Modifier.padding(top = 2.dp), style = Theme.unit((size.value * 0.26f).coerceAtLeast(13f).sp))
     }
 }
 

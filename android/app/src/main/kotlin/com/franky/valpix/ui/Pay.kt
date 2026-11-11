@@ -42,9 +42,9 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.franky.valpix.Amount
 import com.franky.valpix.AppConfig
 import com.franky.valpix.AppModel
 import com.franky.valpix.GlassButton
@@ -64,11 +64,7 @@ fun ConfirmScreen(model: AppModel, recipient: PublicKey, fixedAmount: ULong?, na
 
     Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.weight(1f))
-        BasicText(
-            PesoFormat.whole(amount),
-            Modifier.semantics { contentDescription = "$amount pesos" },
-            style = Theme.number(60.sp, if (payable) Theme.foreground else Theme.dim),
-        )
+        Amount(PesoFormat.whole(amount), 60.sp, spoken = "$amount pesos", color = if (payable) Theme.foreground else Theme.dim)
         BasicText(model.displayName(recipient, name), Modifier.padding(top = 12.dp), style = Theme.caption(), maxLines = 1)
         Spacer(Modifier.weight(1f))
         if (fixedAmount == null) {
@@ -93,7 +89,7 @@ fun InviteScreen(model: AppModel, newcomer: PublicKey, name: String) {
         Image(Icons.Outlined.PersonAdd, null, Modifier.size(58.dp), colorFilter = ColorFilter.tint(Theme.foreground))
         BasicText(model.displayName(newcomer, name), Modifier.padding(top = 18.dp), style = Theme.caption(), maxLines = 1)
         model.inviteCostPesos?.let {
-            BasicText(PesoFormat.signed(it, incoming = false), Modifier.padding(top = 14.dp), style = Theme.number(30.sp, Theme.dim))
+            Amount(PesoFormat.signed(it, incoming = false), 30.sp, spoken = "Cuesta $it pesos", modifier = Modifier.padding(top = 14.dp), color = Theme.soft)
         }
         Spacer(Modifier.weight(1f))
         GlassButton(Icons.Outlined.Fingerprint, "Aprobar invitación", Modifier.padding(bottom = 36.dp), enabled = !model.busy) {
@@ -119,7 +115,7 @@ fun SendingScreen(amountPesos: ULong) {
             Box(Modifier.size(84.dp).border(1.dp, Theme.dim, CircleShape))
             Box(Modifier.size(84.dp).scale(0.7f + 0.8f * pulse).alpha(1f - pulse).border(1.dp, Theme.foreground.copy(alpha = 0.7f), CircleShape))
         }
-        if (amountPesos > 0uL) BasicText(PesoFormat.whole(amountPesos), style = Theme.number(44.sp, Theme.dim))
+        if (amountPesos > 0uL) Amount(PesoFormat.whole(amountPesos), 44.sp, spoken = "$amountPesos pesos", color = Theme.dim)
     }
 }
 
@@ -134,7 +130,7 @@ fun DoneScreen(model: AppModel, amountPesos: ULong?, name: String, incoming: Boo
         Box(Modifier.size(84.dp).background(Theme.foreground, CircleShape), contentAlignment = Alignment.Center) {
             Image(Icons.Outlined.Check, null, Modifier.size(40.dp), colorFilter = ColorFilter.tint(Theme.background))
         }
-        if (amountPesos != null) BasicText(PesoFormat.signed(amountPesos, incoming), style = Theme.number(44.sp))
+        if (amountPesos != null) Amount(PesoFormat.signed(amountPesos, incoming), 44.sp, spoken = "$amountPesos pesos")
         if (name.isNotEmpty()) BasicText(name, style = Theme.caption(), maxLines = 1)
     }
     LaunchedEffect(Unit) {
@@ -170,10 +166,7 @@ fun FailedScreen(amountPesos: ULong?, reason: FailureReason) {
             Image(icon, null, Modifier.size(34.dp), colorFilter = ColorFilter.tint(Theme.foreground))
         }
         if (amountPesos != null && amountPesos > 0uL) {
-            BasicText(
-                PesoFormat.whole(amountPesos),
-                style = Theme.number(44.sp, Theme.dim).copy(textDecoration = if (certainlyNotPaid) TextDecoration.LineThrough else null),
-            )
+            Amount(PesoFormat.whole(amountPesos), 44.sp, spoken = "$amountPesos pesos", color = Theme.dim, struck = certainlyNotPaid)
         }
     }
     LaunchedEffect(Unit) { haptics.performHapticFeedback(HapticFeedbackType.LongPress) }

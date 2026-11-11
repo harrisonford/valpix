@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.QrCode2
 import androidx.compose.runtime.Composable
@@ -18,10 +17,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.franky.valpix.Amount
 import com.franky.valpix.AppConfig
 import com.franky.valpix.AppModel
 import com.franky.valpix.GlassButton
@@ -37,12 +35,15 @@ fun ChargeScreen(model: AppModel) {
     var amount by remember { mutableStateOf(0uL) }
     var showingCode by remember { mutableStateOf(false) }
     var startedAt by remember { mutableDoubleStateOf(0.0) }
+    val copy = rememberCopy()
 
     if (showingCode) {
         val requested = amount.takeIf { it > 0uL }
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(30.dp)) {
-            QrImage(ValpixLink.Pay(model.publicKey, requested, model.sharedName).string, "Código para cobrar", Modifier.size(264.dp))
-            if (requested != null) BasicText(PesoFormat.whole(requested), style = Theme.number(44.sp))
+            // Tap the code to copy it, to be paid by someone who is not here to scan it.
+            val code = ValpixLink.Pay(model.publicKey, requested, model.sharedName).string
+            QrImage(code, "Código para cobrar", Modifier.size(264.dp), onClick = { copy(code) })
+            if (requested != null) Amount(PesoFormat.whole(requested), 44.sp, spoken = "$requested pesos")
         }
         LaunchedEffect(Unit) {
             // Only a payment the chain has confirmed ends this screen.
@@ -56,11 +57,7 @@ fun ChargeScreen(model: AppModel) {
     } else {
         Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
             Spacer(Modifier.weight(1f))
-            BasicText(
-                PesoFormat.whole(amount),
-                Modifier.semantics { contentDescription = "$amount pesos" },
-                style = Theme.number(60.sp, if (amount > 0uL) Theme.foreground else Theme.dim),
-            )
+            Amount(PesoFormat.whole(amount), 60.sp, spoken = "$amount pesos", color = if (amount > 0uL) Theme.foreground else Theme.dim)
             Spacer(Modifier.weight(1f))
             Keypad(amount) { amount = it }
             // With no amount typed, this shows an open code a stall can print.

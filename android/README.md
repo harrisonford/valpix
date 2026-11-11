@@ -19,6 +19,11 @@ until a member brings it in; then the live balance, scan to pay, show a QR to
 get paid, history behind the number, and the wallet (move to another phone,
 password backup, your own access point) behind a long press.
 
+Tapping a "get paid" code or a join code copies it as text, so it can be sent
+in a chat to someone who is not there to scan it. They copy the message and
+press the paste button in their scanner. (A `valpix:` link in a chat is not
+something they can tap: chat apps only make web links tappable.)
+
 An iPhone and an Android phone read each other's codes. The exact link text
 and a sealed backup are pinned as fixtures in both cores
 (`CrossPlatformTest.kt` here, `CrossPlatformTests.swift` there).
@@ -47,7 +52,34 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 ./gradlew :app:installDebug        # onto the phone connected over adb
 ```
 
-Only debug builds exist so far. There is no release signing yet.
+## Release for Google Play
+
+```sh
+cd android
+./gradlew :app:bundleRelease       # app/build/outputs/bundle/release/app-release.aab
+```
+
+The bundle is signed with the upload key when
+`~/.config/valpix/keystore.properties` exists (`storeFile`, `storePassword`,
+`keyAlias`, `keyPassword`); `-Pvalpix.keystore=<file>` points elsewhere.
+Neither the key nor its password is in this repo. **Back both up**: every
+later upload to Play must be signed with the same key. Raise `versionCode` in
+`app/build.gradle.kts` for each upload.
+
+The release is not shrunk and still talks to devnet only.
+
+To try a release build on a phone that has the debug app, give it its own
+name so the two sit side by side (the same name with a different signature
+cannot be installed over the other):
+
+```sh
+./gradlew :app:assembleRelease -Pvalpix.idSuffix=.rc
+adb install app/build/outputs/apk/release/app-release.apk
+```
+
+A phone that has the debug app cannot take the Play one over it either. Move
+or back up the wallet first, remove the debug app, install from Play, and
+bring the wallet back in through the scanner.
 
 **Uninstalling the app deletes the wallet**, because Android removes the
 app's Keystore key with it. Reinstalling over the top (`installDebug`) keeps
@@ -113,7 +145,10 @@ this exists in release builds.
 On a Pixel 9a against devnet, driven by the script above: the self-test,
 joining, the live balance, being paid by the iPhone simulator, paying it,
 the tick while a code is on screen, history, the wallet screen, the
-no-connection state, and a forged launch being asked for the fingerprint.
+no-connection state, a forged launch being asked for the fingerprint, and
+tapping a code to copy it. A signed release build was installed beside the
+debug app and reached the fingerprint prompt without crashing; nothing past
+the prompt has been seen in a release build.
 
 Not yet done by hand: scanning with the camera, the fingerprint prompt
 itself, inviting someone, moving a wallet to another phone, and making and

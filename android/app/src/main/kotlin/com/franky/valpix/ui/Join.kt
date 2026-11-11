@@ -21,10 +21,13 @@ import com.franky.valpix.core.ValpixLink
  */
 @Composable
 fun JoinScreen(model: AppModel) {
+    val copy = rememberCopy()
     Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         TopLine(model)
         Spacer(Modifier.weight(1f))
-        QrImage(ValpixLink.Join(model.publicKey, model.sharedName).string, "Código para unirte", Modifier.size(250.dp))
+        // Tap the code to copy it, to be brought in by a member who is somewhere else.
+        val code = ValpixLink.Join(model.publicKey, model.sharedName).string
+        QrImage(code, "Código para unirte", Modifier.size(250.dp), onClick = { copy(code) })
         Spacer(Modifier.weight(1f))
         // A wallet from another phone, or a backup, comes in through the same scanner.
         GlassButton(Icons.Outlined.QrCodeScanner, "Leer código", Modifier.padding(bottom = 36.dp)) { model.flow = AppModel.Flow.Scan }

@@ -12,7 +12,10 @@ struct ScanView: View {
                 .accessibilityLabel("Cámara")
             // A code can also arrive as text: a link someone sent.
             GlassButton(icon: "doc.on.clipboard", label: "Pegar código", size: 52) {
-                if let text = UIPasteboard.general.string { model.open(text: text, from: .scanned) }
+                if let text = UIPasteboard.general.string {
+                    // A link copied out of a chat often drags a space or a line break with it.
+                    model.open(text: text.trimmingCharacters(in: .whitespacesAndNewlines), from: .scanned)
+                }
             }
             .padding(.bottom, 36)
         }

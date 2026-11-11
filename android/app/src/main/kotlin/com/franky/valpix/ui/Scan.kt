@@ -71,7 +71,7 @@ fun ScanScreen(model: AppModel) {
         GlassButton(Icons.Outlined.ContentPaste, "Pegar código", Modifier.padding(bottom = 36.dp), size = 52.dp) {
             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             clipboard.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(context)?.toString()
-                ?.let { model.open(it, LinkSource.SCANNED) }
+                ?.let { model.open(it.trim(), LinkSource.SCANNED) }
         }
     }
 }

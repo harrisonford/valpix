@@ -1,7 +1,16 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
 }
+
+// The upload key and its password live outside the repo (see README). Without
+// them a release build is still made, but left unsigned.
+val keystoreProperties = file(
+    providers.gradleProperty("valpix.keystore").orNull ?: "${System.getProperty("user.home")}/.config/valpix/keystore.properties"
+)
+val keystore = Properties().apply { if (keystoreProperties.exists()) keystoreProperties.inputStream().use(::load) }
 
 android {
     namespace = "com.franky.valpix"
@@ -18,6 +27,27 @@ android {
         // access points are tried in order, after the person's own.
         buildConfigField("String", "PROGRAM_ID", "\"5AVhdmuAbx8HWJdR6h7QAPojfJHt7Z6TAa9pwj12wqcx\"")
         buildConfigField("String", "ACCESS_POINTS", "\"https://api.devnet.solana.com\"")
+    }
+
+    signingConfigs {
+        if (!keystore.isEmpty) {
+            create("upload") {
+                storeFile = file(keystore.getProperty("storeFile"))
+                storePassword = keystore.getProperty("storePassword")
+                keyAlias = keystore.getProperty("keyAlias")
+                keyPassword = keystore.getProperty("keyPassword")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            // Not shrunk: the app is small, and nothing can then be stripped by mistake.
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.findByName("upload")
+            // -Pvalpix.idSuffix=.rc lets a release build sit beside the debug app on a test phone.
+            applicationIdSuffix = providers.gradleProperty("valpix.idSuffix").orNull
+        }
     }
 
     buildFeatures { compose = true; buildConfig = true }

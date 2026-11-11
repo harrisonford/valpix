@@ -6,11 +6,11 @@ struct HomeView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 8) {
+            HStack(spacing: 10) {
                 NameField()
                 SignalDot(hasRoute: model.hasRoute)
             }
-            .padding(.top, 6)
+            .padding(.top, 12)
 
             Spacer()
 
@@ -42,18 +42,7 @@ struct BalanceText: View {
     var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { context in
             let parts = PesoFormat.parts(micro: model.balance(at: context.date))
-            HStack(alignment: .firstTextBaseline, spacing: 0) {
-                Text(parts.whole)
-                    .font(Theme.number(size))
-                    .foregroundStyle(Theme.foreground)
-                Text("," + parts.decimals)
-                    .font(Theme.number(size * 0.46))
-                    .foregroundStyle(Theme.dim)
-            }
-            .lineLimit(1)
-            .minimumScaleFactor(0.5)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(parts.whole) pesos")
+            Amount(whole: parts.whole, size: size, decimals: parts.decimals, spoken: "\(parts.whole) pesos")
         }
         .padding(.horizontal, 24)
     }

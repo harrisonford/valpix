@@ -5,7 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,10 +29,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -92,9 +94,13 @@ private fun FlowScreen(model: AppModel, flow: AppModel.Flow) {
 /** The person's name and the signal dot, across the top of the main screens. */
 @Composable
 fun TopLine(model: AppModel) {
-    Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-        NameField(model)
-        SignalDot(model.hasRoute, Modifier.padding(start = 8.dp))
+    Row(
+        Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 12.dp),
+        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // A long name gives way to the dot, and scrolls inside its own width.
+        NameField(model, Modifier.weight(1f, fill = false))
+        SignalDot(model.hasRoute, Modifier.padding(start = 10.dp))
     }
 }
 
@@ -110,15 +116,23 @@ fun SignalDot(hasRoute: Boolean, modifier: Modifier = Modifier) {
     )
 }
 
+private const val NAME_HINT = "tu nombre aquí"
+
 /** The person's own name: tap to edit, kept only on this phone. */
 @Composable
-fun NameField(model: AppModel) {
+fun NameField(model: AppModel, modifier: Modifier = Modifier) {
     val focus = LocalFocusManager.current
+    val style = Theme.name().copy(textAlign = TextAlign.Center)
+    // As wide as what it shows, measured here: a text field asked for its
+    // own width answers too small and cuts the name (seen on the Pixel).
+    val measurer = rememberTextMeasurer()
+    val shown = model.name.ifEmpty { NAME_HINT }
+    val width = with(LocalDensity.current) { measurer.measure(shown, style, softWrap = false, maxLines = 1).size.width.toDp() } + 8.dp
     BasicTextField(
         value = model.name,
         onValueChange = { model.name = it.replace("\n", "").take(40) },
-        modifier = Modifier.width(IntrinsicSize.Max).defaultMinSize(minWidth = 44.dp, minHeight = 44.dp).semantics { contentDescription = "Tu nombre" },
-        textStyle = Theme.caption().copy(textAlign = TextAlign.Center),
+        modifier = modifier.width(width).defaultMinSize(minWidth = 44.dp, minHeight = 44.dp).semantics { contentDescription = "Tu nombre" },
+        textStyle = style,
         singleLine = true,
         cursorBrush = SolidColor(Theme.foreground),
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, autoCorrectEnabled = false, imeAction = ImeAction.Done),
@@ -126,7 +140,7 @@ fun NameField(model: AppModel) {
         decorationBox = { field ->
             Box(contentAlignment = Alignment.Center) {
                 // An empty name says where to tap (Kris, 2026-11-10).
-                if (model.name.isEmpty()) BasicText("tu nombre aquí", style = Theme.caption(Theme.dim), maxLines = 1, softWrap = false)
+                if (model.name.isEmpty()) BasicText(NAME_HINT, style = Theme.name(Theme.dim), maxLines = 1, softWrap = false)
                 field()
             }
         },
